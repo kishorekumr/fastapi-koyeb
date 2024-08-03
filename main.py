@@ -70,9 +70,6 @@ def read_csv_daily():
     except Exception as e:
         print(f"Failed to read CSV file: {e}")
 
-# Replace 'your_bot_token' with your actual bot token
-BOT_TOKEN = '7343115067:AAEDQ3eak4Ofri2Ueoh-ELlqJN1ZlwQCacs'
-TELEGRAM_API_URL = f'https://api.telegram.org/bot7343115067:AAEDQ3eak4Ofri2Ueoh-ELlqJN1ZlwQCacs/'
 
 @app.get("/")
 def read_root():
