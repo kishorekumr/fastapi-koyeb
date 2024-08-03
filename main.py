@@ -64,7 +64,7 @@ def read_csv_daily():
     global symbol_to_token
     try:
         # csv_data = pd.read_csv('/home/kishorekumar/fastapi/nse_token.csv')
-        df = pd.read_csv('/home/kishorekumar/fastapi/nse_token.csv')
+        df = pd.read_csv('nse_token.csv')
         symbol_to_token = dict(zip(df['Symbol'], df['Token']))
         print("CSV data loaded successfully.")
     except Exception as e:
