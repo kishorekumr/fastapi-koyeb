@@ -1,4 +1,4 @@
-questsannotated-types==0.6.0
+
 anyio==4.2.0
 click==8.1.7
 fastapi==0.109.0
