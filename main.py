@@ -119,7 +119,7 @@ def get_text_next(text: str):
 def get_investing(inv_id: int,end_date:str):
     #global symbol_to_token
     try:
-
+        http = urllib3.PoolManager()
         end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
         start_date_obj = end_date_obj - timedelta(days=1)
 
@@ -136,8 +136,8 @@ def get_investing(inv_id: int,end_date:str):
             'Referer': 'https://in.investing.com/',
             'domain-id': 'in'
         }
-
-        response = urllib3.request("GET", url,headers=headers) #requests.get(url, headers=headers)
+        response = http.request('GET', url,headers=headers)
+        # response = urllib3.request("GET", url,headers=headers) #requests.get(url, headers=headers)
         return response
 
         # if response.status_code == 200:
