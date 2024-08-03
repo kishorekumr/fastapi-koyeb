@@ -1,5 +1,5 @@
 from typing import Union
-
+from io import StringIO
 # from fastapi import FastAPI
 
 # app = FastAPI()
@@ -127,21 +127,45 @@ def get_investing(inv_id: int,end_date:str):
         start_date_str = start_date_obj.strftime("%Y-%m-%d")
         end_date_str = end_date_obj.strftime("%Y-%m-%d")
 
-        # Construct URL
-        url = f"https://api.investing.com/api/financialdata/historical/1195383?start-date={start_date_str}&end-date={end_date_str}&time-frame=Daily&add-missing-rows=false"
-        # return url
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0',
-            'X-Requested-With': 'XMLHttpRequest',
-            'Referer': 'https://www.investing.com/',
-            'domain-id': 'www'
-        }
-        response = http.request('GET', url,headers=headers)
-        # response = urllib3.request("GET", url,headers=headers) #requests.get(url, headers=headers)
-        if response.status == 200:
-            return response.json()
-        else:
-            return response.status
+        url = "https://www.investing.com/indices/cnx-nifty-junior-historical-data"
+        url = "https://es.investing.com/indices/cnx-nifty-junior-historical-data"
+        
+        # 0   02.08.2024  73.328,15  73.621,40  74.241,25  73.173,45  723,63M  -1.30%
+        r = requests.get(url)
+        # html_content = StringIO(r.text)
+        # print(html_content)
+        r = http.request('GET', url)
+        data = r.data.decode('utf-8')
+        data_str = StringIO(data)
+        # print(tables)
+        tables = pd.read_html(data_str, decimal=',', thousands="'")
+        # for i, table in enumerate(tables):
+        #     print(f"\nTable {i}:\n", table.head())
+        historical_data = tables[0]
+        print(type(historical_data))
+        print(historical_data)
+        try:
+            print(historical_data['Fecha'].iloc[0])
+            return historical_data['Último'].iloc[0]
+        except:
+            print(historical_data['Date'].iloc[0])
+            return historical_data['Price'].iloc[0]
+        
+        # # Construct URL
+        # url = f"https://api.investing.com/api/financialdata/historical/1195383?start-date={start_date_str}&end-date={end_date_str}&time-frame=Daily&add-missing-rows=false"
+        # # return url
+        # headers = {
+        #     'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0',
+        #     'X-Requested-With': 'XMLHttpRequest',
+        #     'Referer': 'https://www.investing.com/',
+        #     'domain-id': 'www'
+        # }
+        # response = http.request('GET', url,headers=headers)
+        # # response = urllib3.request("GET", url,headers=headers) #requests.get(url, headers=headers)
+        # if response.status == 200:
+        #     return response.json()
+        # else:
+        #     return response.status
         # if response.status_code == 200:
         #     data = response.json()
         #     df = pd.DataFrame(data['data'])
