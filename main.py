@@ -137,8 +137,8 @@ def get_investing(inv_id: int,end_date:str):
             'domain-id': 'in'
         }
 
-        response = urllib3.request("GET", url",headers=headers) #requests.get(url, headers=headers)
-        return response.json()
+        response = urllib3.request("GET", url,headers=headers) #requests.get(url, headers=headers)
+        return response
 
         # if response.status_code == 200:
         #     data = response.json()
