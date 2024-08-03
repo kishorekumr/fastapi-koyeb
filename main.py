@@ -139,7 +139,7 @@ def get_investing(inv_id: int,end_date:str):
         response = http.request('GET', url,headers=headers)
         # response = urllib3.request("GET", url,headers=headers) #requests.get(url, headers=headers)
         if response.status == 200:
-            return response
+            return response.json()
         else:
             return response.status
         # if response.status_code == 200:
