@@ -133,8 +133,8 @@ def get_investing(inv_id: int,end_date:str):
         headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0',
             'X-Requested-With': 'XMLHttpRequest',
-            'Referer': 'https://in.investing.com/',
-            'domain-id': 'in'
+            'Referer': 'https://www.investing.com/',
+            'domain-id': 'www'
         }
         response = http.request('GET', url,headers=headers)
         # response = urllib3.request("GET", url,headers=headers) #requests.get(url, headers=headers)
