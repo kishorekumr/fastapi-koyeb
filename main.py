@@ -23,7 +23,7 @@ from typing import Union
 #     return {"message": "Hello from FastAPI!"}
 from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse
-# import requests
+import requests
 import uvicorn
 from datetime import datetime, timedelta
 import pytz
@@ -49,26 +49,26 @@ import json
 import pandas as pd
 ######### Store in SQL token and ltp from websocket
 
-from apscheduler.schedulers.background import BackgroundScheduler
+# from apscheduler.schedulers.background import BackgroundScheduler
 
-symbol_to_token = None
-df = pd.read_csv('/home/kishorekumar/fastapi/nse_token.csv')
-symbol_to_token = dict(zip(df['Symbol'], df['Token']))
-@app.on_event("startup")
-def start_scheduler():
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(read_csv_daily, 'cron', hour=8, minute=10)
-    scheduler.start()
+# symbol_to_token = None
+# df = pd.read_csv('/home/kishorekumar/fastapi/nse_token.csv')
+# symbol_to_token = dict(zip(df['Symbol'], df['Token']))
+# @app.on_event("startup")
+# def start_scheduler():
+#     scheduler = BackgroundScheduler()
+#     scheduler.add_job(read_csv_daily, 'cron', hour=8, minute=10)
+#     scheduler.start()
 
-def read_csv_daily():
-    global symbol_to_token
-    try:
-        # csv_data = pd.read_csv('/home/kishorekumar/fastapi/nse_token.csv')
-        df = pd.read_csv('nse_token.csv')
-        symbol_to_token = dict(zip(df['Symbol'], df['Token']))
-        print("CSV data loaded successfully.")
-    except Exception as e:
-        print(f"Failed to read CSV file: {e}")
+# def read_csv_daily():
+#     global symbol_to_token
+#     try:
+#         # csv_data = pd.read_csv('/home/kishorekumar/fastapi/nse_token.csv')
+#         df = pd.read_csv('nse_token.csv')
+#         symbol_to_token = dict(zip(df['Symbol'], df['Token']))
+#         print("CSV data loaded successfully.")
+#     except Exception as e:
+#         print(f"Failed to read CSV file: {e}")
 
 
 @app.get("/")
@@ -99,20 +99,20 @@ def get_text_next(text: str):
         return "Error"
 
 
-@app.get("/nse_token/{text}", response_class=PlainTextResponse)
-def get_nse_token(text: str):
-    #global symbol_to_token
-    try:
-        token='11536'
-        #token = symbol_to_token["TCS"]
-        #token = symbol_to_token['3MINDIA']
-        #print(token)
-        # return int(totp)
-        #send_message(5618402434, text)
-        token = symbol_to_token[text]
-        return  str(token)
-    except:
-        return "Error"
+# @app.get("/nse_token/{text}", response_class=PlainTextResponse)
+# def get_nse_token(text: str):
+#     #global symbol_to_token
+#     try:
+#         token='11536'
+#         #token = symbol_to_token["TCS"]
+#         #token = symbol_to_token['3MINDIA']
+#         #print(token)
+#         # return int(totp)
+#         #send_message(5618402434, text)
+#         token = symbol_to_token[text]
+#         return  str(token)
+#     except:
+#         return "Error"
 
 
 @app.get("/investing/{inv_id}/{end_date}")
@@ -137,7 +137,7 @@ def get_investing(inv_id: int,end_date:str):
             'domain-id': 'in'
         }
 
-        response = request.get(url, headers=headers)
+        response = requests.get(url, headers=headers)
         return response.text
 
         # if response.status_code == 200:
