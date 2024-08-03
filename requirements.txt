@@ -20,3 +20,4 @@ pandas
 pyotp
 pytz
 urllib3
+lxml
