@@ -134,7 +134,7 @@ def get_investing(inv_id: int,end_date:str):
         url = "https://es.investing.com/indices/cnx-nifty-junior-historical-data"
         
         # 0   02.08.2024  73.328,15  73.621,40  74.241,25  73.173,45  723,63M  -1.30%
-        r = requests.get(url)
+        # r = requests.get(url)
         # html_content = StringIO(r.text)
         # print(html_content)
         r = http.request('GET', url)
