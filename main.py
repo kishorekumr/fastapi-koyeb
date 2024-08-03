@@ -23,7 +23,7 @@ from typing import Union
 #     return {"message": "Hello from FastAPI!"}
 from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse
-import requests
+# import requests
 import uvicorn
 from datetime import datetime, timedelta
 import pytz
@@ -140,7 +140,7 @@ def get_investing(inv_id: int,end_date:str):
             'domain-id': 'in'
         }
 
-        response = requests.get(url, headers=headers)
+        response = request.get(url, headers=headers)
         return response.text
 
         # if response.status_code == 200:
