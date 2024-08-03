@@ -23,7 +23,7 @@ from typing import Union
 #     return {"message": "Hello from FastAPI!"}
 from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse
-import requests
+# import requests
 import uvicorn
 from datetime import datetime, timedelta
 import pytz
@@ -31,7 +31,7 @@ from pyotp import TOTP
 # import pyotp
 app = FastAPI()
 import json
-
+import urllib3
 
 
 # url="https://api.investing.com/api/financialdata/historical/1195383?start-date=2023-10-12&end-date=2024-08-03&time-frame=Daily&add-missing-rows=false"
@@ -137,7 +137,7 @@ def get_investing(inv_id: int,end_date:str):
             'domain-id': 'in'
         }
 
-        response = requests.get(url, headers=headers)
+        response = urllib3.request("GET", url",headers=headers) #requests.get(url, headers=headers)
         return response.json()
 
         # if response.status_code == 200:
