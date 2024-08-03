@@ -138,7 +138,7 @@ def get_investing(inv_id: int,end_date:str):
         }
 
         response = requests.get(url, headers=headers)
-        return response.text
+        return response.json()
 
         # if response.status_code == 200:
         #     data = response.json()
