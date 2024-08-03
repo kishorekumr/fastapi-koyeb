@@ -168,36 +168,6 @@ def get_investing(inv_id: int,end_date:str):
 
 
 
-@app.post('/webhook')
-async def webhook(request: Request):
-    update = await request.json()
-    if 'message' in update:
-        print(update)
-        #chat_id = update['message']['chat']['id']
-        #text = update['message'].get('text', '')
-        #send_message(chat_id, text)
-
-        # # Echo the received message with current time in IST
-        # if text:
-        #     current_time_ist = get_current_time_in_ist()
-        #     response_text = f"{text}\n\nCurrent Time (IST): {current_time_ist}"
-        #     send_message(chat_id, response_text)
-
-    return {"status": "ok"}
-
-def send_message(chat_id, text):
-    url = TELEGRAM_API_URL + 'sendMessage'
-    payload = {
-        'chat_id': chat_id,
-        'text': text
-    }
-    requests.post(url, json=payload)
-
-def get_current_time_in_ist():
-    utc_time = datetime.utcnow()
-    ist = pytz.timezone('Asia/Kolkata')
-    ist_time = utc_time.replace(tzinfo=pytz.utc).astimezone(ist)
-    return ist_time.strftime('%Y-%m-%d %H:%M:%S %Z%z')
 
 # if __name__ == '__main__':
 #     uvicorn.run(app, host='0.0.0.0', port=8000)
