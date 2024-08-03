@@ -138,8 +138,10 @@ def get_investing(inv_id: int,end_date:str):
         }
         response = http.request('GET', url,headers=headers)
         # response = urllib3.request("GET", url,headers=headers) #requests.get(url, headers=headers)
-        return response
-
+        if response.status == 200:
+            return response
+        else:
+            return response.status
         # if response.status_code == 200:
         #     data = response.json()
         #     df = pd.DataFrame(data['data'])
