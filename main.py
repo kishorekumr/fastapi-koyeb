@@ -1,5 +1,8 @@
 from typing import Union
-from io import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 # from fastapi import FastAPI
 
 # app = FastAPI()
