@@ -26,7 +26,7 @@ except ImportError:
 #     return {"message": "Hello from FastAPI!"}
 from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse
-# import requests
+import requests
 import uvicorn
 from datetime import datetime, timedelta
 import pytz
@@ -108,7 +108,8 @@ def get_kite_api(uid: str,pwd: str,totp: str):
     try:
         totp_now=TOTP(totp).now()
         totp_now = totp_now.zfill(6)
-        reqSession = urllib3.PoolManager() #requests.Session()
+        # reqSession = urllib3.PoolManager() #requests.Session()
+        reqSession =requests.Session()
         loginurl = "https://kite.zerodha.com/api/login"
         twofaUrl = "https://kite.zerodha.com/api/twofa"
         request_id = reqSession.request('POST',
