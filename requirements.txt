@@ -21,3 +21,4 @@ pyotp
 pytz
 urllib3
 lxml
+requests
