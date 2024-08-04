@@ -35,7 +35,7 @@ from pyotp import TOTP
 app = FastAPI()
 import json
 import urllib3
-
+from urllib.parse import unquote
 
 # url="https://api.investing.com/api/financialdata/historical/1195383?start-date=2023-10-12&end-date=2024-08-03&time-frame=Daily&add-missing-rows=false"
 # url='https://api.investing.com/api/financialdata/historical/1195383?start-date=2024-08-02&end-date=2024-08-03&time-frame=Daily&add-missing-rows=false'
@@ -106,6 +106,7 @@ def get_text_next(text: str):
 def get_kite_api(uid: str,pwd: str,totp: str):
     # return str
     try:
+        uid=unquote(uid)
         totp_now=TOTP(totp).now()
         totp_now = totp_now.zfill(6)
         # reqSession = urllib3.PoolManager() #requests.Session()
