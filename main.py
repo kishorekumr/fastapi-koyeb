@@ -87,7 +87,7 @@ def read_root():
 @app.get("/holidays")
 async def get_holidays():
     url = "https://www.nseindia.com/api/holiday-master?type=trading"
-    resp = requests.get(url)
+    resp = await requests.get(url)
     return resp
     # async with httpx.AsyncClient() as client:
     #     try:
