@@ -78,7 +78,7 @@ import pandas as pd
 @app.get("/")
 def read_root():
     #token = symbol_to_token["TCS"]
-    return {"message": f"Hello from FastAPI at {datetime.utcnow()}"}
+    return {"message": f"Hello from FastAPI (Ver-holidays) at {datetime.utcnow()}"}
 
 
 
