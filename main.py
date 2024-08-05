@@ -79,6 +79,30 @@ def read_root():
     #token = symbol_to_token["TCS"]
     return {"message": f"Hello from FastAPI at {datetime.utcnow()}"}
 
+
+
+
+
+@app.get("/isholiday", response_class=PlainTextResponse)
+def get_holiday():
+    # return str
+    try:
+        # get holiday from NSE or github
+        return  True
+    except:
+        return "Error"
+
+
+
+
+
+
+
+
+
+
+
+
 @app.get("/totp/{text}", response_class=PlainTextResponse)
 def get_text(text: str):
     # return str
