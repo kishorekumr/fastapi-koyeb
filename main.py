@@ -24,8 +24,9 @@ except ImportError:
 # @app.get("/")
 # def read_root():
 #     return {"message": "Hello from FastAPI!"}
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import PlainTextResponse
+import httpx
 import requests
 import uvicorn
 from datetime import datetime, timedelta
@@ -83,15 +84,21 @@ def read_root():
 
 
 
-@app.get("/isholiday", response_class=PlainTextResponse)
-def get_holiday():
-    # return str
-    try:
-        # get holiday from NSE or github
-        return  True
-    except:
-        return "Error"
-
+@app.get("/holidays")
+async def get_holidays():
+    url = "https://www.nseindia.com/api/holiday-master?type=trading"
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            response.raise_for_status()  # Raises HTTPError for bad responses
+            data = response.json()
+            return data
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=500, detail=f"Request failed: {e}")
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=response.status_code, detail=f"HTTP error: {e}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
 
 
