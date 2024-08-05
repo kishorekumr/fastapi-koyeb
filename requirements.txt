@@ -22,3 +22,4 @@ pytz
 urllib3
 lxml
 requests
+httpx
