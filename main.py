@@ -87,18 +87,19 @@ def read_root():
 @app.get("/holidays")
 async def get_holidays():
     url = "https://www.nseindia.com/api/holiday-master?type=trading"
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(url)
-            response.raise_for_status()  # Raises HTTPError for bad responses
-            data = response.json()
-            return data
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=500, detail=f"Request failed: {e}")
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(status_code=response.status_code, detail=f"HTTP error: {e}")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+    return url
+    # async with httpx.AsyncClient() as client:
+    #     try:
+    #         response = await client.get(url)
+    #         response.raise_for_status()  # Raises HTTPError for bad responses
+    #         data = response.json()
+    #         return data
+    #     except httpx.RequestError as e:
+    #         raise HTTPException(status_code=500, detail=f"Request failed: {e}")
+    #     except httpx.HTTPStatusError as e:
+    #         raise HTTPException(status_code=response.status_code, detail=f"HTTP error: {e}")
+    #     except Exception as e:
+    #         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
 
 
