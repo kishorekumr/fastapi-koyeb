@@ -174,8 +174,11 @@ def get_kite_api(uid: str,pwd: str,totp: str):
     # return str
     try:
         uid=unquote(uid)
-        totp_now=TOTP(totp).now()
-        totp_now = totp_now.zfill(6)
+        if len(totp)>6:
+            totp_now=TOTP(totp).now()
+            totp_now = totp_now.zfill(6)
+        else:
+            totp_now=totp.zfill(6)
         # reqSession = urllib3.PoolManager() #requests.Session()
         reqSession =requests.Session()
         loginurl = "https://kite.zerodha.com/api/login"
