@@ -88,17 +88,17 @@ def read_root():
 def get_holidays():
     try:
         print("holidays endpoint called")
-        url = "https://www.nseindia.com/api/holiday-master?type=trading"
-        print(url)
-        headers={"user-agent":"Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
-        "nseappid":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTcyMjkyOTkwMCwiZXhwIjoxNzIyOTM3MTAwfQ.w1YSS7jf3Nn5KJfuQdYtbUBjDon2uYwMgLSRpg_Vi5k" 
-        }
-        resp = requests.get(url,headers=headers)
-        print(resp)
-        print(resp.json()["CM"])
-        json_data=resp.json()["CM"]
-        holiday_df=pd.DataFrame(json_data)
-        print(holiday_df)
+        url='https://www.nseindia.com/api/holiday-master?type=trading'
+        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, '
+                                 'like Gecko) '
+                                 'Chrome/80.0.3987.149 Safari/537.36',
+                   'accept-language': 'en,gu;q=0.9,hi;q=0.8', 'accept-encoding': 'gzip, deflate, br'}
+        session = requests.Session()
+        request = session.get(baseurl, headers=headers, timeout=5)
+        cookies = dict(request.cookies)
+        response = session.get(url, headers=headers, timeout=5, cookies=cookies)
+        print(response.json())
+        json_data=response.json()["CM"]
         today=datetime.datetime.today().date
         print(today)
         if today in holiday_df['tradingDate']:
