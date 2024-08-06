@@ -88,7 +88,7 @@ def read_root():
 def get_holidays():
     try:
         print("holidays endpoint called")
-        baseurl = "https://www.nseindia.com/"
+        base_url = "https://www.nseindia.com/"
         url='https://www.nseindia.com/api/holiday-master?type=trading'
         headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, '
                                  'like Gecko) '
