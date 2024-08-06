@@ -118,8 +118,8 @@ def get_holidays():
             print("Trading Day")
         response.raise_for_status()
         return resp.json()
-    except:
-        return "Error"
+    except Exception as ex:
+        return str(ex)
     # async with httpx.AsyncClient() as client:
     #     try:
     #         response = await client.get(url)
