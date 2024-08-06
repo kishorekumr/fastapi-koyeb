@@ -99,7 +99,7 @@ def get_holidays():
         response = session.get(url, headers=headers, timeout=5, cookies=cookies)
         print(response.json())
         json_data=response.json()["CM"]
-        today=datetime.datetime.today().date
+        today=datetime.today().date
         print(today)
         if today in holiday_df['tradingDate']:
             print("Holiday")
