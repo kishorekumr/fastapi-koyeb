@@ -86,10 +86,19 @@ def read_root():
 
 @app.get("/holidays")
 def get_holidays():
-    url = "https://www.nseindia.com/api/holiday-master?type=trading"
-    resp = requests.get(url)
-    response.raise_for_status()
-    return resp.json()
+    try:
+        print("holidays endpoint called")
+        url = "https://www.nseindia.com/api/holiday-master?type=trading"
+        print(url)
+        headers={"user-agent":"Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36",
+        "nseappid":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTcyMjkyOTkwMCwiZXhwIjoxNzIyOTM3MTAwfQ.w1YSS7jf3Nn5KJfuQdYtbUBjDon2uYwMgLSRpg_Vi5k" 
+        }
+        resp = requests.get(url,headers=headers)
+        print(resp)
+        response.raise_for_status()
+        return resp.json()
+    except:
+        return "Error"
     # async with httpx.AsyncClient() as client:
     #     try:
     #         response = await client.get(url)
