@@ -26,7 +26,7 @@ except ImportError:
 #     return {"message": "Hello from FastAPI!"}
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import PlainTextResponse
-import httpx
+# import httpx
 import requests
 import uvicorn
 from datetime import datetime, timedelta
@@ -88,7 +88,8 @@ def read_root():
 def get_holidays():
     url = "https://www.nseindia.com/api/holiday-master?type=trading"
     resp = requests.get(url)
-    return resp
+    response.raise_for_status()
+    return resp.json()
     # async with httpx.AsyncClient() as client:
     #     try:
     #         response = await client.get(url)
