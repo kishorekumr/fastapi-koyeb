@@ -102,22 +102,24 @@ def get_holidays():
         }
         print(headers)
         with requests.Session() as session:
-            session.get(base_url, headers=headers)  # Establish session
-            response = session.get(url, headers=headers)  # Fetch data
-            if response.ok:
-                data = response.json()
+            response1=session.get(base_url, headers=headers, timeout=10)  # Establish session
+            print(dict(response1.cookies))
+            response2 = session.get(url, headers=headers,timeout=10)  # Fetch data
+            
+            if response2.ok:
+                data = response2.json()
                 print(data)
             else:
-                print(f"Error: {response.status_code}")
-        json_data=response.json()["CM"]
+                print(f"Error: {response2.status_code}")
+        json_data=response2.json()["CM"]
         today=datetime.today().date
         print(today)
         if today in holiday_df['tradingDate']:
             print("Holiday")
         else:
             print("Trading Day")
-        response.raise_for_status()
-        return resp.json()
+        response2.raise_for_status()
+        return response2.json()
     except Exception as ex:
         return str(ex)
     # async with httpx.AsyncClient() as client:
