@@ -200,7 +200,7 @@ def get_kite_api(uid: str,pwd: str,totp: str):
         return "Error"
 
 @app.get("/kite_api2/{uid}/{pwd}/{totp}", response_class=PlainTextResponse)
-def get_kite_api(uid: str,pwd: str,totp: str):
+def get_kite_api2(uid: str,pwd: str,totp: str):
     # return str
     try:
         uid=unquote(uid)
