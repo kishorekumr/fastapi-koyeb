@@ -98,7 +98,8 @@ def get_holidays():
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36',
             'Accept-Language': 'en,gu;q=0.9,hi;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br'
+            'Accept-Encoding': 'gzip, deflate, br',
+            'nseappid':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTcyMjkyOTkwMCwiZXhwIjoxNzIyOTM3MTAwfQ.w1YSS7jf3Nn5KJfuQdYtbUBjDon2uYwMgLSRpg_Vi5k'
         }
         print(headers)
         with requests.Session() as session:
