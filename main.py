@@ -199,6 +199,39 @@ def get_kite_api(uid: str,pwd: str,totp: str):
     except:
         return "Error"
 
+@app.get("/kite_api2/{uid}/{pwd}/{totp}", response_class=PlainTextResponse)
+def get_kite_api(uid: str,pwd: str,totp: str):
+    # return str
+    try:
+        uid=unquote(uid)
+        # totp_now=TOTP(totp).now()
+        # totp_now = totp_now.zfill(6)
+        # reqSession = urllib3.PoolManager() #requests.Session()
+        reqSession =requests.Session()
+        loginurl = "https://kite.zerodha.com/api/login"
+        twofaUrl = "https://kite.zerodha.com/api/twofa"
+        request_id = reqSession.request('POST',
+            loginurl,
+            data={
+                "user_id": uid,
+                "password": pwd,
+            },
+        ).json()["data"]["request_id"]
+        reqSession.post(
+            twofaUrl,
+            data={"user_id": uid, "request_id": request_id, "twofa_value": totp},
+        )
+        API_Session = reqSession.request('GET',"https://kite.trade/connect/login?api_key=coinios")
+        print(API_Session.url)
+        API_Session = API_Session.url.split("#")[1]
+        data=base64.b64decode(API_Session)
+        data=json.loads(data)
+        print(data)
+        access_token = data["access_token"]
+        return access_token
+    except:
+        return "Error"
+
 # @app.get("/nse_token/{text}", response_class=PlainTextResponse)
 # def get_nse_token(text: str):
 #     #global symbol_to_token
