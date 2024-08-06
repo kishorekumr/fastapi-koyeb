@@ -24,7 +24,7 @@ except ImportError:
 # @app.get("/")
 # def read_root():
 #     return {"message": "Hello from FastAPI!"}
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 # import httpx
 import requests
