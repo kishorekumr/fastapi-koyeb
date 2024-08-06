@@ -94,8 +94,10 @@ def get_holidays():
                                  'like Gecko) '
                                  'Chrome/80.0.3987.149 Safari/537.36',
                    'accept-language': 'en,gu;q=0.9,hi;q=0.8', 'accept-encoding': 'gzip, deflate, br'}
+        print(headers)
         session = requests.Session()
         request = session.get(baseurl, headers=headers, timeout=5)
+        print(request.cookies)
         cookies = dict(request.cookies)
         response = session.get(url, headers=headers, timeout=5, cookies=cookies)
         print(response.json())
