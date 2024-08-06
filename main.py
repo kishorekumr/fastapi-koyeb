@@ -95,6 +95,16 @@ def get_holidays():
         }
         resp = requests.get(url,headers=headers)
         print(resp)
+        print(resp.json()["CM"])
+        json_data=resp.json()["CM"]
+        holiday_df=pd.DataFrame(json_data)
+        print(holiday_df)
+        today=datetime.datetime.today().date
+        print(today)
+        if today in holiday_df['tradingDate']:
+            print("Holiday")
+        else:
+            print("Trading Day")
         response.raise_for_status()
         return resp.json()
     except:
