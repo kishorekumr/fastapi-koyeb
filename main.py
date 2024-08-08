@@ -84,6 +84,7 @@ def read_root():
 @app.get("/quote-derivative")
 def get_quote_derivative(symbol: str):
     url = f'https://www.nseindia.com/api/quote-derivative?symbol={symbol}'
+    print(url)
     nseappid='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTcyMzExODI4MCwiZXhwIjoxNzIzMTI1NDgwfQ.xIprKwUtrSyAUF8VlNm454Q-XBYK0bt0YlfzDn6kngg'
     nseappid='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTcyMzE0NjAwNSwiZXhwIjoxNzIzMTUzMjA1fQ.rWOMzhQ2KQAaMcNOjIpRxSgF3GoZyg2LcZCZAnrIhrE'
     headers = {
@@ -91,7 +92,8 @@ def get_quote_derivative(symbol: str):
     }
     
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=10)
+        print(response)
         return response.json()
         # response.raise_for_status()  # Raise an exception for HTTP errors
     except requests.RequestException as e:
