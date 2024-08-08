@@ -81,7 +81,23 @@ def read_root():
     return {"message": f"Hello from FastAPI (Ver-holidays) at {datetime.utcnow()}"}
 
 
-
+@app.get("/quote-derivative")
+def get_quote_derivative(symbol: str):
+    url = f'https://www.nseindia.com/api/quote-derivative?symbol={symbol}'
+    nseappid='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTcyMzExODI4MCwiZXhwIjoxNzIzMTI1NDgwfQ.xIprKwUtrSyAUF8VlNm454Q-XBYK0bt0YlfzDn6kngg'
+    headers = {
+        'cookie': f'nsit=A; nseappid={nseappid};'
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        return response.json()
+        # response.raise_for_status()  # Raise an exception for HTTP errors
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Request error: {e}")
+        return str(e)
+    
+    
 
 
 @app.get("/holidays")
