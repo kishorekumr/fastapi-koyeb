@@ -352,5 +352,5 @@ def get_investing(inv_id: int,end_date:str):
 
 # if __name__ == '__main__':
 #     uvicorn.run(app, host='0.0.0.0', port=8000)
-
+# uvicorn.run(app, host="YOUR_HOST", port=YOUR_PORT, timeout_keep_alive=YOUR_TIMEOUT_IN_SECONDS)
     
