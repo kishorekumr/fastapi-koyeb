@@ -170,7 +170,7 @@ def get_lic(text: str):
         if text in lic_list:
             return  "Valid"
         else:
-            return "Lic Error
+            return "Lic Error"
     except:
         return "Server Error"
 
