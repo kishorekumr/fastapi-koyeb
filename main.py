@@ -162,7 +162,17 @@ def get_holidays():
 
 
 
-
+@app.get("/lic_check/{text}", response_class=PlainTextResponse)
+def get_lic(text: str):
+    # return str
+    try:
+        lic_list=['0191bb5c-cf09-7ecd-9f3c-fd2df1171511']
+        if text in lic_list:
+            return  "Valid"
+        else:
+            return "Lic Error
+    except:
+        return "Server Error"
 
 
 @app.get("/totp/{text}", response_class=PlainTextResponse)
