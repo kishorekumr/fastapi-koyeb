@@ -98,7 +98,7 @@ def get_quote_derivative(symbol: str):
 @app.get("/history/{symbol}",response_model=List[DataFrameRow]) #,response_model=List[Dict[str, Any]]
 def get_mc_history(symbol: str):
 
-    if : in symbol:
+    if ":" in symbol:
         sym_quote=symbol.replace(":","%3B")
         url = f'https://priceapi.moneycontrol.com/techCharts/indianMarket/index/history?symbol={sym_quote}'
     else:
