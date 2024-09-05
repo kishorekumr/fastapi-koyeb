@@ -15,7 +15,7 @@ from fastapi.responses import PlainTextResponse
 # import httpx
 import requests
 import uvicorn
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pytz
 from pyotp import TOTP
 # import pyotp
@@ -120,7 +120,7 @@ def get_mc_history(symbol: str):
         if data.get('s') == 'ok':
             # Convert the data to a DataFrame
             df = pd.DataFrame({
-                'time': data['t'],
+                'time': [datetime.fromtimestamp(t, tz=timezone.utc).strftime('%Y-%m-%d') for t in data['t']],
                 'open': data['o'],
                 'high': data['h'],
                 'low': data['l'],
