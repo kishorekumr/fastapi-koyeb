@@ -1,29 +1,15 @@
 from typing import Union
+from typing import List, Dict, Any
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-# from fastapi import FastAPI
-
-# app = FastAPI()
-
-
-# @app.get("/")
-# def read_root():
-#     return {"Hello": "World"}
+from pydantic import BaseModel
+import pandas as pd
+import numpy as np
+import requests
 
 
-# @app.get("/items/{item_id}")
-# def read_item(item_id: int, q: Union[str, None] = None):
-#     return {"item_id": item_id, "q": q}
-# from fastapi import FastAPI
-
-# app = FastAPI()
-
-
-# @app.get("/")
-# def read_root():
-#     return {"message": "Hello from FastAPI!"}
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
 # import httpx
@@ -50,29 +36,29 @@ import base64
 # # print(type(data)) # dict
 # df=pd.DataFrame(data['data'])
 
-import pandas as pd
-######### Store in SQL token and ltp from websocket
+class Item(BaseModel):
+    title: str
+    timestamp: datetime
+    description: Union[str, None] = None
 
-# from apscheduler.schedulers.background import BackgroundScheduler
+class DataFrameRow(BaseModel):
+    time: int
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: int
 
-# symbol_to_token = None
-# df = pd.read_csv('/home/kishorekumar/fastapi/nse_token.csv')
-# symbol_to_token = dict(zip(df['Symbol'], df['Token']))
-# @app.on_event("startup")
-# def start_scheduler():
-#     scheduler = BackgroundScheduler()
-#     scheduler.add_job(read_csv_daily, 'cron', hour=8, minute=10)
-#     scheduler.start()
-
-# def read_csv_daily():
-#     global symbol_to_token
-#     try:
-#         # csv_data = pd.read_csv('/home/kishorekumar/fastapi/nse_token.csv')
-#         df = pd.read_csv('nse_token.csv')
-#         symbol_to_token = dict(zip(df['Symbol'], df['Token']))
-#         print("CSV data loaded successfully.")
-#     except Exception as e:
-#         print(f"Failed to read CSV file: {e}")
+def convert_to_serializable(obj):
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, pd.DataFrame):
+        return obj.to_dict(orient='records')
+    return obj
 
 
 @app.get("/")
@@ -101,7 +87,66 @@ def get_quote_derivative(symbol: str):
         return str(e)
     
     
+# https://priceapi.moneycontrol.com/techCharts/indianMarket/stock/history?symbol=
 
+@app.get("/history/{symbol}",response_model=List[DataFrameRow]) #,response_model=List[Dict[str, Any]]
+def get_mc_history(symbol: str):
+    sym_quote=quote(symbol)
+    url = f'https://priceapi.moneycontrol.com/techCharts/indianMarket/stock/history?symbol={sym_quote}'
+    print(url)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    today = datetime.now()
+    thirty_days_ago = today - timedelta(days=30)
+
+    # Convert to UNIX timestamps
+    to_timestamp = int(time.mktime(today.timetuple()))
+    from_timestamp = int(time.mktime(thirty_days_ago.timetuple()))
+
+    # Format the result as needed
+    result = f"&resolution=1D&from={from_timestamp}&to={to_timestamp}&countback=30"
+    url=url+result
+    # return url
+    print(url)
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        data = response.json()
+
+        # Print the JSON response to understand its structure
+        print("JSON Data:", data)
+        data = {k: [convert_to_serializable(i) for i in v] if isinstance(v, list) else convert_to_serializable(v) for k, v in data.items()}
+
+        if data.get('s') == 'ok':
+            # Convert the data to a DataFrame
+            df = pd.DataFrame({
+                'time': data['t'],
+                'open': data['o'],
+                'high': data['h'],
+                'low': data['l'],
+                'close': data['c'],
+                'volume': data['v']
+            })
+            json_compatible_df = jsonable_encoder(df.to_dict(orient='records'))
+            return JSONResponse(content=json_compatible_df)
+            return df.to_string()
+            return df.to_dict(orient='records')
+        else:
+            return pd.DataFrame() 
+        # Convert the JSON response to a DataFrame (assuming it's a list of records)
+        # if isinstance(json_data, list):  # If it's a list of dictionaries
+        #     return pd.DataFrame(json_data)
+        # elif isinstance(json_data, dict):  # If it's a dictionary
+        #     return pd.DataFrame([json_data])
+        # else:
+        #     print("Unexpected JSON structure.")
+        #     return pd.DataFrame()
+        # response.raise_for_status()  # Raise an exception for HTTP errors
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Request error: {e}")
+        return str(e)
+    except Exception as ex:
+        print(f"Error in symbol: {str(ex)}")
 
 @app.get("/holidays")
 def get_holidays():
