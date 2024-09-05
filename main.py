@@ -22,7 +22,7 @@ from pyotp import TOTP
 app = FastAPI()
 import json
 import urllib3
-from urllib.parse import unquote
+from urllib.parse import unquote, quote
 import base64
 # url="https://api.investing.com/api/financialdata/historical/1195383?start-date=2023-10-12&end-date=2024-08-03&time-frame=Daily&add-missing-rows=false"
 # url='https://api.investing.com/api/financialdata/historical/1195383?start-date=2024-08-02&end-date=2024-08-03&time-frame=Daily&add-missing-rows=false'
