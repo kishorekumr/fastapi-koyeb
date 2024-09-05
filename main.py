@@ -70,7 +70,7 @@ def convert_to_serializable(obj):
 @app.get("/")
 def read_root():
     #token = symbol_to_token["TCS"]
-    return {"message": f"Hello from FastAPI (Ver-holidays) at {datetime.utcnow()}"}
+    return {"message": f"Hello from FastAPI (Ver-mchistory) at {datetime.utcnow()}"}
 
 
 @app.get("/quote-derivative")
