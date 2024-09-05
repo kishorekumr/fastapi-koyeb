@@ -12,6 +12,8 @@ import requests
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 # import httpx
 import requests
 import uvicorn
@@ -36,7 +38,10 @@ import base64
 # print(data)
 # # print(type(data)) # dict
 # df=pd.DataFrame(data['data'])
-
+from pydantic import BaseModel
+import pandas as pd
+import numpy as np
+import requests
 class Item(BaseModel):
     title: str
     timestamp: datetime
