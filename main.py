@@ -72,6 +72,9 @@ def read_root():
     #token = symbol_to_token["TCS"]
     return {"message": f"Hello from FastAPI (Ver-mchistory) at {datetime.utcnow()}"}
 
+@app.head("/")
+def read_root_head():
+    return Response()
 
 @app.get("/quote-derivative")
 def get_quote_derivative(symbol: str):
