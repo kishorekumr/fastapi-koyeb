@@ -74,7 +74,7 @@ def read_root():
 
 @app.head("/")
 def read_root_head():
-    return Response()
+    return "OK"
 
 @app.get("/quote-derivative")
 def get_quote_derivative(symbol: str):
