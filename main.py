@@ -233,7 +233,7 @@ def get_lic(text: str):
     except:
         return "Server Error"
 
-@app.post("/totp", response_class=PlainTextResponse)
+@app.post("/totp", response_class=JSONResponse)
 async def get_totp(request: Request):
     try:
         # Parse the incoming JSON body
@@ -245,7 +245,7 @@ async def get_totp(request: Request):
         totp = totp.zfill(6)
         
         # Return the TOTP as a string
-        return totp
+        return JSONResponse(content={"token": totp})
     except Exception as e:
         return f"Error: {str(e)}"
 
