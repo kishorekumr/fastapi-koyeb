@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import requests
 
-
+from fastapi import Request
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
 from fastapi.encoders import jsonable_encoder
@@ -233,6 +233,21 @@ def get_lic(text: str):
     except:
         return "Server Error"
 
+@app.post("/totp", response_class=PlainTextResponse)
+async def get_totp(request: Request):
+    try:
+        # Parse the incoming JSON body
+        body = await request.json()
+        secret_request = body.get("secretRequest")
+
+        # Generate the TOTP
+        totp = TOTP(secret_request).now()
+        totp = totp.zfill(6)
+        
+        # Return the TOTP as a string
+        return totp
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 @app.get("/totp/{text}", response_class=PlainTextResponse)
 def get_text(text: str):
