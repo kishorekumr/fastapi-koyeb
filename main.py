@@ -27,21 +27,22 @@ import time
 import urllib3
 from urllib.parse import unquote, quote
 import base64
-# url="https://api.investing.com/api/financialdata/historical/1195383?start-date=2023-10-12&end-date=2024-08-03&time-frame=Daily&add-missing-rows=false"
-# url='https://api.investing.com/api/financialdata/historical/1195383?start-date=2024-08-02&end-date=2024-08-03&time-frame=Daily&add-missing-rows=false'
-# headers = {
-#     'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0',
-#     'X-Requested-With': 'XMLHttpRequest',
-#     'Referer': 'https://in.investing.com/',
-#     'domain-id': 'in'}
-# data = requests.get(url, headers=headers).json()
-# print(data)
-# # print(type(data)) # dict
-# df=pd.DataFrame(data['data'])
+
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 import requests
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://kite.zerodha.com"],  # Specify allowed origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
+
 class Item(BaseModel):
     title: str
     timestamp: datetime
@@ -248,6 +249,29 @@ async def get_totp(request: Request):
         return JSONResponse(content={"token": totp})
     except Exception as e:
         return f"Error: {str(e)}"
+
+
+@app.post("/totp", response_class=JSONResponse)
+async def get_totp(request: Request):
+    try:
+        # Parse the incoming JSON body
+        body = await request.json()
+        secret_request = body.get("secretRequest")
+
+        if not secret_request:
+            raise HTTPException(status_code=400, detail="Missing 'secretRequest' in request body.")
+
+        # Generate the TOTP
+        totp = TOTP(secret_request).now()
+        totp = totp.zfill(6)
+        
+        # Return the TOTP as a string
+        return JSONResponse(content={"token": totp})
+    
+    except HTTPException as http_exc:
+        return JSONResponse(status_code=http_exc.status_code, content={"detail": http_exc.detail})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": f"Error: {str(e)}"})
 
 @app.get("/totp/{text}", response_class=PlainTextResponse)
 def get_text(text: str):
