@@ -113,14 +113,14 @@ def get_mc_history(symbol: str):
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
     today = datetime.now()
-    thirty_days_ago = today - timedelta(days=30)
+    thirty_days_ago = today - timedelta(days=60)
 
     # Convert to UNIX timestamps
     to_timestamp = int(time.mktime(today.timetuple()))
     from_timestamp = int(time.mktime(thirty_days_ago.timetuple()))
 
     # Format the result as needed
-    result = f"&resolution=1D&from={from_timestamp}&to={to_timestamp}&countback=30"
+    result = f"&resolution=1D&from={from_timestamp}&to={to_timestamp}&countback=60"
     url=url+result
     # return url
     print(url)
@@ -140,7 +140,7 @@ def get_mc_history(symbol: str):
                 'high': data['h'],
                 'low': data['l'],
                 'close': data['c'],
-                'volume': data['v']
+                # 'volume': data['v']
             })
             json_compatible_df = jsonable_encoder(df.to_dict(orient='records'))
             return JSONResponse(content=json_compatible_df)
