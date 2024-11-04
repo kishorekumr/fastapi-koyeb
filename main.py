@@ -163,6 +163,71 @@ def get_mc_history(symbol: str):
     except Exception as ex:
         print(f"Error in symbol: {str(ex)}")
 
+
+@app.get("/history_mcx/{symbol}",response_model=List[DataFrameRow]) #,response_model=List[Dict[str, Any]]
+def get_mc_history(symbol: str):
+
+    if ":" in symbol:
+        sym_quote=symbol.replace(":","%3B")
+        url = f'https://priceapi.moneycontrol.com/techCharts/commodity/history?symbol={sym_quote}'
+    else:
+        url = f'https://priceapi.moneycontrol.com/techCharts/commodity/history?symbol={symbol}'
+    
+    print(url)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    today = datetime.now()
+    thirty_days_ago = today - timedelta(days=30)
+
+    # Convert to UNIX timestamps
+    to_timestamp = int(time.mktime(today.timetuple()))
+    from_timestamp = int(time.mktime(thirty_days_ago.timetuple()))
+
+    # Format the result as needed
+    result = f"&resolution=1D&from={from_timestamp}&to={to_timestamp}&countback=30"
+    url=url+result
+    # return url
+    print(url)
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        data = response.json()
+
+        # Print the JSON response to understand its structure
+        print("JSON Data:", data)
+        data = {k: [convert_to_serializable(i) for i in v] if isinstance(v, list) else convert_to_serializable(v) for k, v in data.items()}
+
+        if data.get('s') == 'ok':
+            # Convert the data to a DataFrame
+            df = pd.DataFrame({
+                'time': [datetime.fromtimestamp(t, tz=timezone.utc).strftime('%Y-%m-%d') for t in data['t']],
+                'open': data['o'],
+                'high': data['h'],
+                'low': data['l'],
+                'close': data['c'],
+                'volume': data['v']
+            })
+            json_compatible_df = jsonable_encoder(df.to_dict(orient='records'))
+            return JSONResponse(content=json_compatible_df)
+            return df.to_string()
+            return df.to_dict(orient='records')
+        else:
+            return pd.DataFrame() 
+        # Convert the JSON response to a DataFrame (assuming it's a list of records)
+        # if isinstance(json_data, list):  # If it's a list of dictionaries
+        #     return pd.DataFrame(json_data)
+        # elif isinstance(json_data, dict):  # If it's a dictionary
+        #     return pd.DataFrame([json_data])
+        # else:
+        #     print("Unexpected JSON structure.")
+        #     return pd.DataFrame()
+        # response.raise_for_status()  # Raise an exception for HTTP errors
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Request error: {e}")
+        return str(e)
+    except Exception as ex:
+        print(f"Error in symbol: {str(ex)}")
+
 @app.get("/holidays")
 def get_holidays():
     try:
