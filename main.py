@@ -305,7 +305,7 @@ async def smallcase(sc_id: str):
                 system_calculated_mia = json_response['data']['stats']['systemCalculatedMIA']
                 
                 # Return the value or log it
-                return {"systemCalculatedMIA": system_calculated_mia}
+                return str(system_calculated_mia)
             else:
                 # Raise HTTPException if response code is not 200
                 raise HTTPException(status_code=response.status_code, detail="Error fetching data")
