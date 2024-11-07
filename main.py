@@ -33,6 +33,8 @@ import pandas as pd
 import numpy as np
 import requests
 
+import httpx
+
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
@@ -282,6 +284,35 @@ def get_holidays():
 
 
 
+
+
+
+@app.get("/smallcase/{sc_id}", response_class=PlainTextResponse)
+async def smallcase(sc_id: str):
+    url = f"https://api.smallcase.com/sam/smallcases?scid={sc_id}"  # URL with the sc_id parameter
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            # Make the GET request
+            response = await client.get(url)
+            
+            # Check for a successful response (status code 200)
+            if response.status_code == 200:
+                # Parse the JSON response
+                json_response = response.json()
+                
+                # Access systemCalculatedMIA from the response
+                system_calculated_mia = json_response['data']['stats']['systemCalculatedMIA']
+                
+                # Return the value or log it
+                return {"systemCalculatedMIA": system_calculated_mia}
+            else:
+                # Raise HTTPException if response code is not 200
+                raise HTTPException(status_code=response.status_code, detail="Error fetching data")
+        
+        except Exception as e:
+            # Handle other exceptions
+            raise HTTPException(status_code=500, detail=str(e))
 
 
 
