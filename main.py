@@ -303,6 +303,8 @@ async def smallcase(sc_id: str):
                 
                 # Access systemCalculatedMIA from the response
                 system_calculated_mia = json_response['data']['stats']['systemCalculatedMIA']
+
+                system_calculated_mia = str(system_calculated_mia).replace(",", "")
                 
                 # Return the value or log it
                 return str(system_calculated_mia)
