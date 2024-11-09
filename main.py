@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-# import httpx
+import httpx
 import requests
 import uvicorn
 from datetime import datetime, timedelta, timezone
@@ -32,8 +32,6 @@ from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 import requests
-
-import httpx
 
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
@@ -317,6 +315,70 @@ async def smallcase(sc_id: str):
             raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/fetch_ltp/{appkey}/{ses_token}/{stock_code}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=PlainTextResponse)
+async def fetch_ltp(
+    appkey: str,
+    ses_token: str,
+    stock_code: str,
+    to_date: str,
+    interval: str,
+    product_type: str,
+    expiry_date: str,
+    right: str,
+    strike_price: str
+):
+    # Decode any URL-encoded strings
+    appkey = unquote(appkey)
+    ses_token = unquote(ses_token)
+    stock_code = unquote(stock_code)
+    to_date = unquote(to_date)
+    interval = unquote(interval)
+    product_type = unquote(product_type)
+    expiry_date = unquote(expiry_date)
+    right = unquote(right)
+    strike_price = unquote(strike_price)
+
+    # Construct the URL and headers
+    url = "https://breezeapi.icicidirect.com/api/v2/historicalcharts"  # Replace with actual API URL
+    from_date = to_date
+    # Define the query parameters for the request
+    params = {
+        "stock_code": stock_code,
+        "from_date": from_date,
+        "to_date": to_date,
+        "interval": interval,
+        "product_type": product_type,
+        "expiry_date": expiry_date,
+        "right": right,
+        "strike_price": strike_price
+    }
+    headers = {
+        'X-SessionToken': ses_token,
+        'apikey': appkey
+    }
+    
+    # Make the GET request with httpx
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, params=params, headers=headers)
+
+            # Check if response is successful
+            if response.status_code == 200:
+                json_response = response.json()
+                
+                # Assuming 'ltp' is the field for the latest price in the response
+                # ltp = json_response.get("ltp")
+                
+                if ltp is not None:
+                    # return str(ltp)
+                    return json_response
+                else:
+                    raise HTTPException(status_code=404, detail="LTP not found in response")
+            else:
+                raise HTTPException(status_code=response.status_code, detail="Error fetching data")
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 
 
