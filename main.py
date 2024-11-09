@@ -416,6 +416,8 @@ async def fetch_ltp_excel(
 
     # Construct the URL and headers
     url = "https://breezeapi.icicidirect.com/api/v2/historicalcharts"  # Replace with actual API URL
+    expiry_date = convert_to_iso8601(expiry_date)
+    to_date = convert_to_iso8601(to_date)
     from_date = to_date
     # Define the query parameters for the request
     params = {
