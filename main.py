@@ -267,7 +267,7 @@ async def smallcase(sc_id: str):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/fetch_ltp/{appkey}/{ses_token}/{stock_code}/{exch_code}/{from_date}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=PlainTextResponse)
+@app.get("/fetch_ltp/{appkey}/{ses_token}/{stock_code}/{exch_code}/{from_date}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=JSONResponse)
 async def fetch_ltp(
     appkey: str,
     ses_token: str,
@@ -323,7 +323,7 @@ async def fetch_ltp(
             if response.status_code == 200:
                 print(response.json())
                 json_response = response.json()
-                return str(json_response['Success'][0]['close'])
+                return json_response
 
         except Exception as e:
             print(f"Exception: {str(e)}")
