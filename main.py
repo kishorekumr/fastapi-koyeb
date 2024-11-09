@@ -388,8 +388,9 @@ async def fetch_ltp_excel(
                 # return json_response['Status']
                 return str(json_response['Success'][0]['close'])
 
-        except Exception as e:
-            print(f"Exception")
+        except Exception as ex:
+            return str(json_response['Error'])
+            print(f"Exception:{str(ex)}")
 
 
 
