@@ -317,7 +317,7 @@ async def fetch_ltp(
     print(params,headers)
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(url, params=params, headers=headers)
+            response = await client.get(url, params=params, headers=headers,timeout=5)
 
             # Check if response is successful
             if response.status_code == 200:
@@ -379,7 +379,7 @@ async def fetch_ltp_excel(
     # Make the GET request with httpx
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(url, params=params, headers=headers)
+            response = await client.get(url, params=params, headers=headers,timeout=5)
 
             # Check if response is successful
             if response.status_code == 200:
