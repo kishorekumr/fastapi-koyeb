@@ -236,62 +236,6 @@ def get_mc_history(symbol: str):
     except Exception as ex:
         print(f"Error in symbol: {str(ex)}")
 
-@app.get("/holidays")
-def get_holidays():
-    try:
-        print("holidays endpoint called")
-        base_url = "https://www.nseindia.com/"
-        url='https://www.nseindia.com/api/holiday-master?type=trading'
-        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, '
-                                 'like Gecko) '
-                                 'Chrome/80.0.3987.149 Safari/537.36',
-                   'accept-language': 'en,gu;q=0.9,hi;q=0.8', 'accept-encoding': 'gzip, deflate, br'}
-        
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36',
-            'Accept-Language': 'en,gu;q=0.9,hi;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'nseappid':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTcyMjkyOTkwMCwiZXhwIjoxNzIyOTM3MTAwfQ.w1YSS7jf3Nn5KJfuQdYtbUBjDon2uYwMgLSRpg_Vi5k'
-        }
-        print(headers)
-        with requests.Session() as session:
-            response1=session.get(base_url, headers=headers, timeout=10)  # Establish session
-            print(dict(response1.cookies))
-            response2 = session.get(url, headers=headers,timeout=10)  # Fetch data
-            
-            if response2.ok:
-                data = response2.json()
-                print(data)
-            else:
-                print(f"Error: {response2.status_code}")
-        json_data=response2.json()["CM"]
-        today=datetime.today().date
-        print(today)
-        if today in holiday_df['tradingDate']:
-            print("Holiday")
-        else:
-            print("Trading Day")
-        response2.raise_for_status()
-        return response2.json()
-    except Exception as ex:
-        return str(ex)
-    # async with httpx.AsyncClient() as client:
-    #     try:
-    #         response = await client.get(url)
-    #         response.raise_for_status()  # Raises HTTPError for bad responses
-    #         data = response.json()
-    #         return data
-    #     except httpx.RequestError as e:
-    #         raise HTTPException(status_code=500, detail=f"Request failed: {e}")
-    #     except httpx.HTTPStatusError as e:
-    #         raise HTTPException(status_code=response.status_code, detail=f"HTTP error: {e}")
-    #     except Exception as e:
-    #         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
-
-
-
-
-
 
 @app.get("/smallcase/{sc_id}", response_class=PlainTextResponse)
 async def smallcase(sc_id: str):
@@ -323,11 +267,12 @@ async def smallcase(sc_id: str):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/fetch_ltp/{appkey}/{ses_token}/{stock_code}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=PlainTextResponse)
+@app.get("/fetch_ltp/{appkey}/{ses_token}/{stock_code}/{exch_code}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=PlainTextResponse)
 async def fetch_ltp(
     appkey: str,
     ses_token: str,
     stock_code: str,
+    exch_code: str,
     to_date: str,
     interval: str,
     product_type: str,
@@ -339,6 +284,7 @@ async def fetch_ltp(
     appkey = unquote(appkey)
     ses_token = unquote(ses_token)
     stock_code = unquote(stock_code)
+    exch_code = unquote(exch_code)
     to_date = unquote(to_date)
     interval = unquote(interval)
     product_type = unquote(product_type)
@@ -352,6 +298,7 @@ async def fetch_ltp(
     # Define the query parameters for the request
     params = {
         "stock_code": stock_code,
+        "exch_code": exch_code,
         "from_date": from_date,
         "to_date": to_date,
         "interval": interval,
@@ -390,7 +337,7 @@ async def fetch_ltp(
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/fetch_ltp_excel/{appkey}/{ses_token}/{stock_code}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=PlainTextResponse)
+@app.get("/fetch_ltp_excel/{appkey}/{ses_token}/{stock_code}/{exch_code}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=PlainTextResponse)
 async def fetch_ltp_excel(
     appkey: str,
     ses_token: str,
@@ -694,6 +641,59 @@ def get_investing(inv_id: int,end_date:str):
 
     except Exception as e:
         return {"error": str(e)}
+
+@app.get("/holidays")
+def get_holidays():
+    try:
+        print("holidays endpoint called")
+        base_url = "https://www.nseindia.com/"
+        url='https://www.nseindia.com/api/holiday-master?type=trading'
+        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, '
+                                 'like Gecko) '
+                                 'Chrome/80.0.3987.149 Safari/537.36',
+                   'accept-language': 'en,gu;q=0.9,hi;q=0.8', 'accept-encoding': 'gzip, deflate, br'}
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36',
+            'Accept-Language': 'en,gu;q=0.9,hi;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'nseappid':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTcyMjkyOTkwMCwiZXhwIjoxNzIyOTM3MTAwfQ.w1YSS7jf3Nn5KJfuQdYtbUBjDon2uYwMgLSRpg_Vi5k'
+        }
+        print(headers)
+        with requests.Session() as session:
+            response1=session.get(base_url, headers=headers, timeout=10)  # Establish session
+            print(dict(response1.cookies))
+            response2 = session.get(url, headers=headers,timeout=10)  # Fetch data
+            
+            if response2.ok:
+                data = response2.json()
+                print(data)
+            else:
+                print(f"Error: {response2.status_code}")
+        json_data=response2.json()["CM"]
+        today=datetime.today().date
+        print(today)
+        if today in holiday_df['tradingDate']:
+            print("Holiday")
+        else:
+            print("Trading Day")
+        response2.raise_for_status()
+        return response2.json()
+    except Exception as ex:
+        return str(ex)
+    # async with httpx.AsyncClient() as client:
+    #     try:
+    #         response = await client.get(url)
+    #         response.raise_for_status()  # Raises HTTPError for bad responses
+    #         data = response.json()
+    #         return data
+    #     except httpx.RequestError as e:
+    #         raise HTTPException(status_code=500, detail=f"Request failed: {e}")
+    #     except httpx.HTTPStatusError as e:
+    #         raise HTTPException(status_code=response.status_code, detail=f"HTTP error: {e}")
+    #     except Exception as e:
+    #         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+
 
 
 
