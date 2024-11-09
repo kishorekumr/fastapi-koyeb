@@ -369,7 +369,7 @@ async def fetch_ltp(
                 # Assuming 'ltp' is the field for the latest price in the response
                 # ltp = json_response.get("ltp")
                 
-                if ltp is not None:
+                if json_response is not None:
                     # return str(ltp)
                     return json_response
                 else:
