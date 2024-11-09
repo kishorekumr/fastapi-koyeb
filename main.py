@@ -323,7 +323,7 @@ async def fetch_ltp(
             if response.status_code == 200:
                 print(response.json())
                 json_response = response.json()
-                return json_response
+                return json_response['Success']
 
         except Exception as e:
             print(f"Exception: {str(e)}")
