@@ -267,13 +267,14 @@ async def smallcase(sc_id: str):
             raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/fetch_ltp/{appkey}/{ses_token}/{stock_code}/{exch_code}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=PlainTextResponse)
+@app.get("/fetch_ltp/{appkey}/{ses_token}/{stock_code}/{exch_code}/{from_date}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=PlainTextResponse)
 async def fetch_ltp(
     appkey: str,
     ses_token: str,
     stock_code: str,
     exch_code: str,
-    to_date: str,
+    from_date: str,
+    to_date: str, 
     interval: str,
     product_type: str,
     expiry_date: str,
@@ -285,6 +286,7 @@ async def fetch_ltp(
     ses_token = unquote(ses_token)
     stock_code = unquote(stock_code)
     exch_code = unquote(exch_code)
+    from_date = unquote(from_date)
     to_date = unquote(to_date)
     interval = unquote(interval)
     product_type = unquote(product_type)
@@ -294,7 +296,7 @@ async def fetch_ltp(
 
     # Construct the URL and headers
     url = "https://breezeapi.icicidirect.com/api/v2/historicalcharts"  # Replace with actual API URL
-    from_date = to_date
+    # from_date = to_date
     # Define the query parameters for the request
     params = {
         "stock_code": stock_code,
