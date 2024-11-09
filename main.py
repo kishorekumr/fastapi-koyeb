@@ -67,6 +67,14 @@ def convert_to_serializable(obj):
         return obj.to_dict(orient='records')
     return obj
 
+def convert_to_iso8601(excel_time: float):
+    # Convert Excel float time to datetime object
+    if excel_time >= 59:
+        excel_time -= 2
+    excel_epoch = datetime(1900, 1, 1)
+    timestamp = excel_epoch + timedelta(days=excel_time)
+    return timestamp.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+
 
 @app.get("/")
 def read_root():
@@ -344,6 +352,75 @@ async def fetch_ltp(
     # Define the query parameters for the request
     params = {
         "stock_code": stock_code,
+        "from_date": from_date,
+        "to_date": to_date,
+        "interval": interval,
+        "product_type": product_type,
+        "expiry_date": expiry_date,
+        "right": right,
+        "strike_price": strike_price
+    }
+    headers = {
+        'X-SessionToken': ses_token,
+        'apikey': appkey
+    }
+    return params,headers
+    # Make the GET request with httpx
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, params=params, headers=headers)
+
+            # Check if response is successful
+            if response.status_code == 200:
+                json_response = response.json()
+                
+                # Assuming 'ltp' is the field for the latest price in the response
+                # ltp = json_response.get("ltp")
+                
+                if json_response is not None:
+                    # return str(ltp)
+                    return json_response
+                else:
+                    raise HTTPException(status_code=404, detail="LTP not found in response")
+            else:
+                raise HTTPException(status_code=response.status_code, detail="Error fetching data")
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/fetch_ltp_excel/{appkey}/{ses_token}/{stock_code}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=PlainTextResponse)
+async def fetch_ltp_excel(
+    appkey: str,
+    ses_token: str,
+    stock_code: str,
+    exch_code: str,
+    to_date: float,
+    interval: str,
+    product_type: str,
+    expiry_date: float,
+    right: str,
+    strike_price: float
+):
+    # Decode any URL-encoded strings
+    appkey = unquote(appkey)
+    ses_token = unquote(ses_token)
+    stock_code = unquote(stock_code)
+    exch_code = unquote(exch_code)
+    # to_date = unquote(to_date)
+    interval = unquote(interval)
+    product_type = unquote(product_type)
+    # expiry_date = unquote(expiry_date)
+    right = unquote(right)
+    # strike_price = unquote(strike_price)
+
+    # Construct the URL and headers
+    url = "https://breezeapi.icicidirect.com/api/v2/historicalcharts"  # Replace with actual API URL
+    from_date = to_date
+    # Define the query parameters for the request
+    params = {
+        "stock_code": stock_code,
+        "exch_code": exch_code,
         "from_date": from_date,
         "to_date": to_date,
         "interval": interval,
