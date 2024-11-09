@@ -312,7 +312,7 @@ async def fetch_ltp(
         'apikey': appkey
     }
     # return params,headers
-    # Make the GET request with httpx
+    print(params,headers)
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(url, params=params, headers=headers)
@@ -324,7 +324,7 @@ async def fetch_ltp(
                 return str(json_response['Success'][0]['close'])
 
         except Exception as e:
-            print(f"Exception: {str(ex)}")
+            print(f"Exception: {str(e)}")
 
 
 @app.get("/fetch_ltp_excel/{appkey}/{ses_token}/{stock_code}/{exch_code}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=PlainTextResponse)
@@ -385,8 +385,6 @@ async def fetch_ltp_excel(
                 print(json_response)
                 # return json_response['Status']
                 return str(json_response['Success'][0]['close'])
-            else:
-                return "Error"
 
         except Exception as e:
             print(f"Exception")
