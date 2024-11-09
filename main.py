@@ -321,20 +321,9 @@ async def fetch_ltp(
             if response.status_code == 200:
                 json_response = response.json()
                 return str(json_response['Success'][0]['close'])
-                
-                # Assuming 'ltp' is the field for the latest price in the response
-                # ltp = json_response.get("ltp")
-                
-                if json_response is not None:
-                    # return str(ltp)
-                    return json_response
-                else:
-                    raise HTTPException(status_code=404, detail="LTP not found in response")
-            else:
-                raise HTTPException(status_code=response.status_code, detail="Error fetching data")
 
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            print("Error")
 
 
 @app.get("/fetch_ltp_excel/{appkey}/{ses_token}/{stock_code}/{exch_code}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=PlainTextResponse)
