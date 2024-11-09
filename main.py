@@ -384,14 +384,8 @@ async def fetch_ltp_excel(
                 print(json_response)
                 # return json_response['Status']
                 return str(json_response['Success'][0]['close'])
-                # Assuming 'ltp' is the field for the latest price in the response
-                # ltp = json_response.get("ltp")
-                
-                if json_response is not None:
-                    # return str(ltp)
-                    return str(json_response['Error'])
             else:
-                raise HTTPException(status_code=response.status_code, detail="Error fetching data")
+                return "Error"
 
         except Exception as e:
             print(f"Exception")
