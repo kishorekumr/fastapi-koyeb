@@ -433,7 +433,7 @@ async def fetch_ltp_excel(
         'X-SessionToken': ses_token,
         'apikey': appkey
     }
-    return params,headers
+    # return params,headers
     # Make the GET request with httpx
     async with httpx.AsyncClient() as client:
         try:
@@ -442,20 +442,20 @@ async def fetch_ltp_excel(
             # Check if response is successful
             if response.status_code == 200:
                 json_response = response.json()
-                
+                print(json_response)
+                # return json_response['Status']
+                return str(json_response['Success'][0]['close'])
                 # Assuming 'ltp' is the field for the latest price in the response
                 # ltp = json_response.get("ltp")
                 
                 if json_response is not None:
                     # return str(ltp)
-                    return json_response
-                else:
-                    raise HTTPException(status_code=404, detail="LTP not found in response")
+                    return str(json_response['Error'])
             else:
                 raise HTTPException(status_code=response.status_code, detail="Error fetching data")
 
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            print(f"Exception")
 
 
 
