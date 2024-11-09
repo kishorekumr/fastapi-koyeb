@@ -356,7 +356,7 @@ async def fetch_ltp(
         'X-SessionToken': ses_token,
         'apikey': appkey
     }
-    
+    return params,headers
     # Make the GET request with httpx
     async with httpx.AsyncClient() as client:
         try:
