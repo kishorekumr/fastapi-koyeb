@@ -364,7 +364,7 @@ async def fetch_ltp(
         'X-SessionToken': ses_token,
         'apikey': appkey
     }
-    return params,headers
+    # return params,headers
     # Make the GET request with httpx
     async with httpx.AsyncClient() as client:
         try:
@@ -373,6 +373,7 @@ async def fetch_ltp(
             # Check if response is successful
             if response.status_code == 200:
                 json_response = response.json()
+                return str(json_response['Success'][0]['close'])
                 
                 # Assuming 'ltp' is the field for the latest price in the response
                 # ltp = json_response.get("ltp")
