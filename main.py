@@ -319,11 +319,12 @@ async def fetch_ltp(
 
             # Check if response is successful
             if response.status_code == 200:
+                print(response.json())
                 json_response = response.json()
                 return str(json_response['Success'][0]['close'])
 
         except Exception as e:
-            print("Error")
+            print(f"Exception: {str(ex)}")
 
 
 @app.get("/fetch_ltp_excel/{appkey}/{ses_token}/{stock_code}/{exch_code}/{to_date}/{interval}/{product_type}/{expiry_date}/{right}/{strike_price}", response_class=PlainTextResponse)
