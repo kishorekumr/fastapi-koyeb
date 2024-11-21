@@ -243,8 +243,8 @@ def get_mc_history(fincode: str):
     url = f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option=NSE&FinCode={fincode}'
     
     print(url)
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    headers1 = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     }
     headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
@@ -268,7 +268,10 @@ def get_mc_history(fincode: str):
     # return url
     print(url)
     try:
-        response = requests.get(url, headers=headers , verify=True, timeout=30)
+        session = requests.Session()
+        response = session.get("https://www.indiratrade.com", headers=headers1)
+        print("Cookies:", session.cookies.get_dict())
+        response = session.get(url, headers=headers)
         data = response.json()
         print(type(data))
         # Print the JSON response to understand its structure
