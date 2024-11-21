@@ -241,7 +241,17 @@ def get_mc_history(symbol: str):
 def get_mc_history(fincode: str):
     # get months
     url = f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option=NSE&FinCode={fincode}'
-    
+    try:
+        import requests
+        from requests.packages.urllib3.contrib.pyopenssl import inject_into_urllib3
+        inject_into_urllib3()
+        print("requests[security] is installed and working.")
+    except ImportError:
+        print("requests[security] not found. Installing...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "requests[security]"])
+        print("requests[security] installed successfully.")
+    except Exception as e:
+        print(f"An error occurred: {e}")    
     print(url)
     headers1 = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
