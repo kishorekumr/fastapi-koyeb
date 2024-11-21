@@ -739,24 +739,16 @@ def get_holidays():
         return response2.json()
     except Exception as ex:
         return str(ex)
-    # async with httpx.AsyncClient() as client:
-    #     try:
-    #         response = await client.get(url)
-    #         response.raise_for_status()  # Raises HTTPError for bad responses
-    #         data = response.json()
-    #         return data
-    #     except httpx.RequestError as e:
-    #         raise HTTPException(status_code=500, detail=f"Request failed: {e}")
-    #     except httpx.HTTPStatusError as e:
-    #         raise HTTPException(status_code=response.status_code, detail=f"HTTP error: {e}")
-    #     except Exception as e:
-    #         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
 
-
-
-
-# if __name__ == '__main__':
-#     uvicorn.run(app, host='0.0.0.0', port=8000)
-# uvicorn.run(app, host="YOUR_HOST", port=YOUR_PORT, timeout_keep_alive=YOUR_TIMEOUT_IN_SECONDS)
+if __name__ == '__main__':
+    try:
+        import selenium
+        print("Selenium is installed and working.")
+    except ImportError:
+        print("selenium not found. Installing...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "selenium"])
+        print("selenium installed successfully.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
     
