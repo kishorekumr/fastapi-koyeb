@@ -270,6 +270,8 @@ def get_mc_history(fincode: str):
     try:
         session = requests.Session()
         response = session.get("https://www.indiratrade.com", headers=headers1)
+        print(response)
+        print(response.text)
         print("Cookies:", session.cookies.get_dict())
         response = session.get(url, headers=headers)
         data = response.json()
