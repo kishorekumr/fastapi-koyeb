@@ -34,6 +34,13 @@ import pandas as pd
 import numpy as np
 import requests
 
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
@@ -238,77 +245,70 @@ def get_mc_history(symbol: str):
         print(f"Error in symbol: {str(ex)}")
 
 
-@app.get("/history_it/{fincode}",response_model=List[DataFrameRow]) #,response_model=List[Dict[str, Any]]
+@app.get("/history_it/{fincode}",response_model=Union[List[Dict[str, Any]], Dict[str, Any]]) #,response_model=List[Dict[str, Any]]
 def get_mc_history(fincode: str):
-    # get months
-    url = f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option=NSE&FinCode={fincode}'
-    try:
-        import requests
-        from requests.packages.urllib3.contrib.pyopenssl import inject_into_urllib3
-        inject_into_urllib3()
-        print("requests[security] is installed and working.")
-    except ImportError:
-        print("requests[security] not found. Installing...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "requests[security]"])
-        print("requests[security] installed successfully.")
-    except Exception as e:
-        print(f"An error occurred: {e}")    
-    print(url)
-    headers1 = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    
+    service = Service()
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless")  # Run Chrome in headless mode
+    options.add_argument("--disable-gpu")
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+    driver = webdriver.Chrome(service=service, options=options)
+
+    url = "https://www.indiratrade.com"
+    driver.get(url)
+
+    # Wait until cookies are available or a specific element loads (adjust selector if needed)
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.TAG_NAME, "body"))
+    )
+
+    # Extract cookies
+    cookies = driver.get_cookies()
+    session_cookies = {cookie['name']: cookie['value'] for cookie in cookies}
+    print("Session Cookies:", session_cookies)
+
+    session = requests.Session()
+
+    # Add cookies to the session
+    for name, value in session_cookies.items():
+        session.cookies.set(name, value)
+
+    url='https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option=NSE&FinCode=303477&fmonth=OCT&fyear=2024&lmonth=NOV&lyear=2024&pageNo=1&PageSize=50'
+    data_url = "https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx"
+    params = {
+        "Option": "NSE",
+        "FinCode": fincode,
+        "fmonth": "OCT",
+        "fyear": "2024",
+        "lmonth": "NOV",
+        "lyear": "2024",
+        "pageNo": "1",
+        "PageSize": "50",
     }
     headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Accept-Language': 'en-US,en;q=0.9',
-    'Connection': 'keep-alive'
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     }
-    today = datetime.now()
-    current_month = today.strftime('%b').upper()  # Short month name (e.g., 'SEP')
-    current_year = today.year
-
-    # Previous month and year
-    prev_month = (today.replace(day=1) - timedelta(days=1)).strftime('%b').upper()
-    prev_year = (today.replace(day=1) - timedelta(days=1)).year
-
-    # Format the result
-    result = f'&fmonth={prev_month}&fyear={prev_year}&lmonth={current_month}&lyear={current_year}&pageNo=1&PageSize=50'
-
-    url=url+result
-    # return url
-    print(url)
-    try:
-        session = requests.Session()
-        response = session.get("https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx", headers=headers1)
-        print(response)
-        print(response.text)
-        print("Cookies:", session.cookies.get_dict())
-        response = session.get(url, headers=headers)
+    response = session.get(data_url, headers=headers, params=params)
+    # Check response
+    if response.status_code == 200:
+        print("Response Data:", response.text)
         data = response.json()
-        print(type(data))
-        # Print the JSON response to understand its structure
-        print("JSON Data:", data)
         processed_data = []
         for item in data:
-            # Process each item from the list if needed
             processed_data.append({
                 'time': item.get('HOYear'),
-                'open': item.get('HOOpen'),
-                'high': item.get('HOHigh'),
-                'low': item.get('HOLow'),
-                'close': item.get('HOClose'),
-                'volume': item.get('HOVolume')
+                'open': float(item.get('HOOpen', 0)),  # Add default for safety
+                'high': float(item.get('HOHigh', 0)),
+                'low': float(item.get('HOLow', 0)),
+                'close': float(item.get('HOClose', 0)),
+                'volume': int(item.get('HOVolume', 0)),
             })
-        # Convert to DataFrame
-        df = pd.DataFrame(processed_data)
-        json_compatible_df = jsonable_encoder(df.to_dict(orient='records'))
-        return JSONResponse(content=json_compatible_df)
-        # else:
-            # return pd.DataFrame() 
-    except Exception as ex:
-        print(f"Error in symbol: {str(ex)}")
-        return pd.DataFrame() 
+        print(processed_data)
+        return processed_data
+        # return pd.DataFrame(processed_data)
+    else:
+        print(f"Error: {response.status_code}")
 
 @app.get("/smallcase/{sc_id}", response_class=PlainTextResponse)
 async def smallcase(sc_id: str):
