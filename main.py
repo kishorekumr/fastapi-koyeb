@@ -4,6 +4,15 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
+try:
+    import selenium
+    print("Selenium is installed and working.")
+except ImportError:
+    print("selenium not found. Installing...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "selenium"])
+    print("selenium installed successfully.")
+except Exception as e:
+    print(f"An error occurred: {e}")
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
@@ -741,14 +750,14 @@ def get_holidays():
         return str(ex)
 
 
-if __name__ == '__main__':
-    try:
-        import selenium
-        print("Selenium is installed and working.")
-    except ImportError:
-        print("selenium not found. Installing...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "selenium"])
-        print("selenium installed successfully.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+# if __name__ == '__main__':
+#     try:
+#         import selenium
+#         print("Selenium is installed and working.")
+#     except ImportError:
+#         print("selenium not found. Installing...")
+#         subprocess.check_call([sys.executable, "-m", "pip", "install", "selenium"])
+#         print("selenium installed successfully.")
+#     except Exception as e:
+#         print(f"An error occurred: {e}")
     
