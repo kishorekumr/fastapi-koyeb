@@ -283,10 +283,6 @@ def get_mc_history(fincode: str):
         return JSONResponse(content=json_compatible_df)
         # else:
             # return pd.DataFrame() 
-
-    except requests.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"Request error: {e}")
-        return str(e)
     except Exception as ex:
         print(f"Error in symbol: {str(ex)}")
         return pd.DataFrame() 
