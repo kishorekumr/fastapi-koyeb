@@ -268,7 +268,7 @@ def get_mc_history(fincode: str):
     # return url
     print(url)
     try:
-        response = requests.get(url,headers=headers, timeout=30)
+        response = requests.get(url, headers=headers , verify=True, timeout=30)
         data = response.json()
         print(type(data))
         # Print the JSON response to understand its structure
