@@ -246,6 +246,13 @@ def get_mc_history(fincode: str):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
+    headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Connection': 'keep-alive'
+    }
     today = datetime.now()
     current_month = today.strftime('%b').upper()  # Short month name (e.g., 'SEP')
     current_year = today.year
@@ -261,7 +268,7 @@ def get_mc_history(fincode: str):
     # return url
     print(url)
     try:
-        response = requests.get(url, timeout=30)
+        response = requests.get(url,headers=headers, timeout=30)
         data = response.json()
         print(type(data))
         # Print the JSON response to understand its structure
