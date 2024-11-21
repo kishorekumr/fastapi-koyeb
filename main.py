@@ -269,7 +269,7 @@ def get_mc_history(fincode: str):
     print(url)
     try:
         session = requests.Session()
-        response = session.get("https://www.indiratrade.com", headers=headers1)
+        response = session.get("https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx", headers=headers1)
         print(response)
         print(response.text)
         print("Cookies:", session.cookies.get_dict())
