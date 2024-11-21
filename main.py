@@ -261,7 +261,7 @@ def get_mc_history(fincode: str):
     # return url
     print(url)
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, timeout=30)
         data = response.json()
         print(type(data))
         # Print the JSON response to understand its structure
@@ -289,6 +289,7 @@ def get_mc_history(fincode: str):
         return str(e)
     except Exception as ex:
         print(f"Error in symbol: {str(ex)}")
+        return pd.DataFrame() 
 
 @app.get("/smallcase/{sc_id}", response_class=PlainTextResponse)
 async def smallcase(sc_id: str):
