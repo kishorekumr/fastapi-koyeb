@@ -237,6 +237,59 @@ def get_mc_history(symbol: str):
         print(f"Error in symbol: {str(ex)}")
 
 
+@app.get("/history_it/{fincode}",response_model=List[DataFrameRow]) #,response_model=List[Dict[str, Any]]
+def get_mc_history(fincode: str):
+    # get months
+    url = f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option=NSE&FinCode={fincode}'
+    
+    print(url)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    today = datetime.now()
+    current_month = today.strftime('%b').upper()  # Short month name (e.g., 'SEP')
+    current_year = today.year
+
+    # Previous month and year
+    prev_month = (today.replace(day=1) - timedelta(days=1)).strftime('%b').upper()
+    prev_year = (today.replace(day=1) - timedelta(days=1)).year
+
+    # Format the result
+    result = f'&fmonth={prev_month}&fyear={prev_year}&lmonth={current_month}&lyear={current_year}&pageNo=1&PageSize=50'
+
+    url=url+result
+    # return url
+    print(url)
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        data = response.json()
+        print(type(data))
+        # Print the JSON response to understand its structure
+        print("JSON Data:", data)
+        processed_data = []
+        for item in data:
+            # Process each item from the list if needed
+            processed_data.append({
+                'time': item.get('HOYear'),
+                'open': item.get('HOOpen'),
+                'high': item.get('HOHigh'),
+                'low': item.get('HOLow'),
+                'close': item.get('HOClose'),
+                'volume': item.get('HOVolume')
+            })
+        # Convert to DataFrame
+        df = pd.DataFrame(processed_data)
+        json_compatible_df = jsonable_encoder(df.to_dict(orient='records'))
+        return JSONResponse(content=json_compatible_df)
+        # else:
+            # return pd.DataFrame() 
+
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Request error: {e}")
+        return str(e)
+    except Exception as ex:
+        print(f"Error in symbol: {str(ex)}")
+
 @app.get("/smallcase/{sc_id}", response_class=PlainTextResponse)
 async def smallcase(sc_id: str):
     url = f"https://api.smallcase.com/sam/smallcases?scid={sc_id}"  # URL with the sc_id parameter
