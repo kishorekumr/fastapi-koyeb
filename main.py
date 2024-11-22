@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from typing import Union
 from typing import List, Dict, Any
 try:
@@ -17,8 +19,7 @@ from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 import requests
-import subprocess
-import sys
+
 from fastapi import Request
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
