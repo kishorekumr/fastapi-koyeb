@@ -1,4 +1,18 @@
 import subprocess
+
+def install_chromium():
+    try:
+        print("Updating package list...")
+        subprocess.run(["sudo", "apt-get", "update"], check=True)
+        
+        print("Installing Chromium browser...")
+        subprocess.run(["sudo", "apt-get", "install", "-y", "chromium-browser"], check=True)
+        
+        print("Chromium successfully installed!")
+    except subprocess.CalledProcessError as e:
+        print("Error during installation:", e)
+
+install_chromium()
 import sys
 from typing import Union
 from typing import List, Dict, Any
