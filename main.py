@@ -1,5 +1,24 @@
 import subprocess
 
+try:
+    print("Downloading Google Chrome...")
+    subprocess.run([
+        "wget", 
+        "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb", 
+        "-O", "google-chrome.deb"
+    ], check=True)
+
+    print("Installing Google Chrome...")
+    subprocess.run(["sudo", "apt-get", "update"], check=True)
+    subprocess.run(["sudo", "apt-get", "install", "-y", "./google-chrome.deb"], check=True)
+    
+    print("Google Chrome successfully installed!")
+    
+    print("Cleaning up...")
+    subprocess.run(["rm", "google-chrome.deb"], check=True)
+except subprocess.CalledProcessError as e:
+    print("Error during installation:", e)
+
 def install_chromium():
     try:
         print("Updating package list...")
