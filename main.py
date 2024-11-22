@@ -15,6 +15,9 @@ except ImportError:
     print("selenium installed successfully.")
 except Exception as e:
     print(f"An error occurred: {e}")
+
+
+
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
@@ -50,6 +53,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
@@ -257,12 +261,15 @@ def get_mc_history(symbol: str):
 
 @app.get("/history_it/{fincode}",response_model=Union[List[Dict[str, Any]], Dict[str, Any]]) #,response_model=List[Dict[str, Any]]
 def get_mc_history(fincode: str):
+
+    chromedriver_path = ChromeDriverManager().install()
     
-    service = Service()
+    service = Service(chromedriver_path)
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")  # Run Chrome in headless mode
     options.add_argument("--disable-gpu")
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+    
     driver = webdriver.Chrome(service=service, options=options)
 
     url = "https://www.indiratrade.com"
