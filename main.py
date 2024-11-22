@@ -1,44 +1,4 @@
 import subprocess
-
-try:
-    subprocess.run(["dpkg", "-i", "google-chrome-stable_current_amd64.deb"], check=True)
-    print("Google Chrome installed successfully.")
-except subprocess.CalledProcessError:
-    print("Installation failed. Missing dependencies might need to be installed manually.")
-
-
-try:
-    print("Downloading Google Chrome...")
-    subprocess.run([
-        "wget", 
-        "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb", 
-        "-O", "google-chrome.deb"
-    ], check=True)
-
-    print("Installing Google Chrome...")
-    subprocess.run(["sudo", "apt-get", "update"], check=True)
-    subprocess.run(["sudo", "apt-get", "install", "-y", "./google-chrome.deb"], check=True)
-    
-    print("Google Chrome successfully installed!")
-    
-    print("Cleaning up...")
-    subprocess.run(["rm", "google-chrome.deb"], check=True)
-except subprocess.CalledProcessError as e:
-    print("Error during installation:", e)
-
-def install_chromium():
-    try:
-        print("Updating package list...")
-        subprocess.run(["sudo", "apt-get", "update"], check=True)
-        
-        print("Installing Chromium browser...")
-        subprocess.run(["sudo", "apt-get", "install", "-y", "chromium-browser"], check=True)
-        
-        print("Chromium successfully installed!")
-    except subprocess.CalledProcessError as e:
-        print("Error during installation:", e)
-
-install_chromium()
 import sys
 from typing import Union
 from typing import List, Dict, Any
@@ -304,7 +264,7 @@ def get_mc_history(fincode: str):
 
     chromedriver_path = ChromeDriverManager().install()
     
-    service = Service(chromedriver_path)
+    service = Service('/workspace/.wdm/drivers/chromedriver/linux64/114.0.5735.90/chromedriver')
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")  # Run Chrome in headless mode
     options.add_argument("--disable-gpu")
