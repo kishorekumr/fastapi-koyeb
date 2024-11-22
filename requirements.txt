@@ -23,3 +23,5 @@ urllib3
 lxml
 requests
 httpx
+selenium
+webdriver-manager
