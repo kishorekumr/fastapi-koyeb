@@ -6,16 +6,6 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-try:
-    import selenium
-    print("Selenium is installed and working.")
-except ImportError:
-    print("selenium not found. Installing...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "selenium"])
-    print("selenium installed successfully.")
-except Exception as e:
-    print(f"An error occurred: {e}")
-
 
 
 from pydantic import BaseModel
@@ -262,15 +252,12 @@ def get_mc_history(symbol: str):
 @app.get("/history_it/{fincode}",response_model=Union[List[Dict[str, Any]], Dict[str, Any]]) #,response_model=List[Dict[str, Any]]
 def get_mc_history(fincode: str):
 
-    chromedriver_path = ChromeDriverManager().install()
-    
-    service = Service('/workspace/.wdm/drivers/chromedriver/linux64/114.0.5735.90/chromedriver')
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")  # Run Chrome in headless mode
     options.add_argument("--disable-gpu")
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
     
-    driver = webdriver.Chrome(service=service, options=options)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     url = "https://www.indiratrade.com"
     driver.get(url)
