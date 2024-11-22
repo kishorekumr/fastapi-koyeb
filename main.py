@@ -1,6 +1,13 @@
 import subprocess
 
 try:
+    subprocess.run(["dpkg", "-i", "google-chrome-stable_current_amd64.deb"], check=True)
+    print("Google Chrome installed successfully.")
+except subprocess.CalledProcessError:
+    print("Installation failed. Missing dependencies might need to be installed manually.")
+
+
+try:
     print("Downloading Google Chrome...")
     subprocess.run([
         "wget", 
