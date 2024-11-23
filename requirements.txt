@@ -26,3 +26,4 @@ httpx
 selenium
 webdriver-manager
 chromedriver-autoinstaller
+pyppeteer
