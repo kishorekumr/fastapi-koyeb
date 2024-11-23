@@ -252,8 +252,9 @@ def get_it_history(exch: str, fincode: str):
         response = client.get(url)
         response_body = response.content.decode('utf-8')
         parsed_data = json.loads(response_body) 
+        print(response.json())
         print(parsed_data)
-        return parsed_data
+        return {"data": parsed_data}
     except:
         return {"Message":"Error"}
 
