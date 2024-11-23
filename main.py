@@ -7,7 +7,7 @@ try:
 except ImportError:
     from io import StringIO
 
-
+from pyppeteer import launch
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
@@ -248,6 +248,17 @@ def get_mc_history(symbol: str):
     except Exception as ex:
         print(f"Error in symbol: {str(ex)}")
 
+
+
+@app.get("/history_it2/{exch}/{fincode}",response_model=Union[List[Dict[str, Any]], Dict[str, Any]]) #,response_model=List[Dict[str, Any]]
+def get_it_history(exch: str, fincode: str):
+    print(exch,fincode)
+    url=f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option={exch}&FinCode={fincode}&fmonth=OCT&fyear=2024&lmonth=NOV&lyear=2024&pageNo=1&PageSize=50'
+    browser = await launch()
+    page = await browser.newPage()
+    await page.goto('https://example.com')
+    await page.screenshot({'path': 'example.png'})
+    await browser.close()
 
 @app.get("/history_it/{fincode}",response_model=Union[List[Dict[str, Any]], Dict[str, Any]]) #,response_model=List[Dict[str, Any]]
 def get_mc_history(fincode: str):
