@@ -61,6 +61,15 @@ class DataFrameRow(BaseModel):
     close: float
     volume: int
 
+class HistoricalData(BaseModel):
+    HOYear: str
+    HOOpen: float
+    HOHigh: float
+    HOLow: float
+    HOClose: float
+    HOVolume: int
+    HOTurnover: int
+
 def convert_to_serializable(obj):
     if isinstance(obj, np.integer):
         return int(obj)
@@ -243,7 +252,7 @@ def get_mc_history(symbol: str):
 
 
 
-@app.get("/history_it2/{exch}/{fincode}" ,response_model=List[Dict[str, Any]])
+@app.get("/history_it2/{exch}/{fincode}" , response_model=List[HistoricalData])
 def get_it_history(exch: str, fincode: str):
     try:
         url=f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option={exch}&FinCode={fincode}&fmonth=OCT&fyear=2024&lmonth=NOV&lyear=2024&pageNo=1&PageSize=50'
@@ -254,7 +263,7 @@ def get_it_history(exch: str, fincode: str):
         parsed_data = json.loads(response_body) 
         print(response.json())
         print(parsed_data)
-        return {"data": parsed_data}
+        return pd.DataFrame(parsed_data)
     except:
         return {"Message":"Error"}
 
