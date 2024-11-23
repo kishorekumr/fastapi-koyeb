@@ -249,7 +249,8 @@ async def get_it_history(exch: str, fincode: str):
     client = ScrapingBeeClient(api_key='3YJNM84LOHW51BJ8WMRLMNERNQ4F5U9CLVVNXQ8MUJZA4LL2IWRBIS48QK3PD3WXKQRTS8OIWQ32CJE8')
     response = client.get(url)
     response_body = response.content.decode('utf-8')
-    return response_body
+    parsed_data = json.loads(response_body) 
+    return parsed_data
 
 @app.get("/smallcase/{sc_id}", response_class=PlainTextResponse)
 async def smallcase(sc_id: str):
