@@ -245,12 +245,17 @@ def get_mc_history(symbol: str):
 
 @app.get("/history_it2/{exch}/{fincode}" ,response_model=List[Dict[str, Any]])
 async def get_it_history(exch: str, fincode: str):
-    url=f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option={exch}&FinCode={fincode}&fmonth=OCT&fyear=2024&lmonth=NOV&lyear=2024&pageNo=1&PageSize=50'
-    client = ScrapingBeeClient(api_key='3YJNM84LOHW51BJ8WMRLMNERNQ4F5U9CLVVNXQ8MUJZA4LL2IWRBIS48QK3PD3WXKQRTS8OIWQ32CJE8')
-    response = client.get(url)
-    response_body = response.content.decode('utf-8')
-    parsed_data = json.loads(response_body) 
-    return parsed_data
+    try:
+        url=f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option={exch}&FinCode={fincode}&fmonth=OCT&fyear=2024&lmonth=NOV&lyear=2024&pageNo=1&PageSize=50'
+        print(url
+        client = ScrapingBeeClient(api_key='3YJNM84LOHW51BJ8WMRLMNERNQ4F5U9CLVVNXQ8MUJZA4LL2IWRBIS48QK3PD3WXKQRTS8OIWQ32CJE8')
+        response = client.get(url)
+        response_body = response.content.decode('utf-8')
+        parsed_data = json.loads(response_body) 
+        print(parsed_data)
+        return parsed_data
+    except:
+        return {"Message":"Error"}
 
 @app.get("/smallcase/{sc_id}", response_class=PlainTextResponse)
 async def smallcase(sc_id: str):
