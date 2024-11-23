@@ -7,8 +7,7 @@ try:
 except ImportError:
     from io import StringIO
 
-from pyppeteer import launch
-from pyppeteer.chromium_downloader import chromium_executable
+from scrapingbee import ScrapingBeeClient
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
@@ -38,13 +37,6 @@ import pandas as pd
 import numpy as np
 import requests
 
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
@@ -251,86 +243,13 @@ def get_mc_history(symbol: str):
 
 
 
-@app.get("/history_it2/{exch}/{fincode}") #,response_model=List[Dict[str, Any]]
+@app.get("/history_it2/{exch}/{fincode}") ,response_model=List[Dict[str, Any]]
 async def get_it_history(exch: str, fincode: str):
-    print(exch,fincode)
     url=f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option={exch}&FinCode={fincode}&fmonth=OCT&fyear=2024&lmonth=NOV&lyear=2024&pageNo=1&PageSize=50'
-    browser = await launch(
-    headless=True,
-    executablePath=chromium_executable(),
-    args=['--no-sandbox', '--disable-setuid-sandbox']
-    )
-    print(executable_path)
-    page = await browser.newPage()
-    await page.goto(url)
-    page_content = await page.content()
-    await browser.close()
-    return {"content": page_content}
-
-@app.get("/history_it/{fincode}",response_model=Union[List[Dict[str, Any]], Dict[str, Any]]) #,response_model=List[Dict[str, Any]]
-def get_mc_history(fincode: str):
-    service = Service('/workspace/chrome-headless-shell-linux64/chrome-headless-shell')
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless")  # Run Chrome in headless mode
-    options.add_argument("--disable-gpu")
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-    options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(service=service, options=options)
-
-    url = "https://www.indiratrade.com"
-    driver.get(url)
-
-    # Wait until cookies are available or a specific element loads (adjust selector if needed)
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.TAG_NAME, "body"))
-    )
-
-    # Extract cookies
-    cookies = driver.get_cookies()
-    session_cookies = {cookie['name']: cookie['value'] for cookie in cookies}
-    print("Session Cookies:", session_cookies)
-
-    session = requests.Session()
-
-    # Add cookies to the session
-    for name, value in session_cookies.items():
-        session.cookies.set(name, value)
-
-    url='https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option=NSE&FinCode=303477&fmonth=OCT&fyear=2024&lmonth=NOV&lyear=2024&pageNo=1&PageSize=50'
-    data_url = "https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx"
-    params = {
-        "Option": "NSE",
-        "FinCode": fincode,
-        "fmonth": "OCT",
-        "fyear": "2024",
-        "lmonth": "NOV",
-        "lyear": "2024",
-        "pageNo": "1",
-        "PageSize": "50",
-    }
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    }
-    response = session.get(data_url, headers=headers, params=params)
-    # Check response
-    if response.status_code == 200:
-        print("Response Data:", response.text)
-        data = response.json()
-        processed_data = []
-        for item in data:
-            processed_data.append({
-                'time': item.get('HOYear'),
-                'open': float(item.get('HOOpen', 0)),  # Add default for safety
-                'high': float(item.get('HOHigh', 0)),
-                'low': float(item.get('HOLow', 0)),
-                'close': float(item.get('HOClose', 0)),
-                'volume': int(item.get('HOVolume', 0)),
-            })
-        print(processed_data)
-        return processed_data
-        # return pd.DataFrame(processed_data)
-    else:
-        print(f"Error: {response.status_code}")
+    client = ScrapingBeeClient(api_key='3YJNM84LOHW51BJ8WMRLMNERNQ4F5U9CLVVNXQ8MUJZA4LL2IWRBIS48QK3PD3WXKQRTS8OIWQ32CJE8')
+    response = client.get(url)
+    response_body = response.content.decode('utf-8')
+    return response_body
 
 @app.get("/smallcase/{sc_id}", response_class=PlainTextResponse)
 async def smallcase(sc_id: str):
