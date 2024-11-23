@@ -8,6 +8,7 @@ except ImportError:
     from io import StringIO
 
 from pyppeteer import launch
+from pyppeteer.chromium_downloader import chromium_executable
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
@@ -256,7 +257,7 @@ async def get_it_history(exch: str, fincode: str):
     url=f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option={exch}&FinCode={fincode}&fmonth=OCT&fyear=2024&lmonth=NOV&lyear=2024&pageNo=1&PageSize=50'
     browser = await launch(
     headless=True,
-    executablePath='/app/.local/share/pyppeteer/local-chromium/575458/chrome-linux/chrome',
+    executablePath=chromium_executable(),
     args=['--no-sandbox', '--disable-setuid-sandbox']
     )
     page = await browser.newPage()
