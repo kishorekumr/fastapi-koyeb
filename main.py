@@ -247,7 +247,7 @@ def get_mc_history(symbol: str):
 async def get_it_history(exch: str, fincode: str):
     try:
         url=f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option={exch}&FinCode={fincode}&fmonth=OCT&fyear=2024&lmonth=NOV&lyear=2024&pageNo=1&PageSize=50'
-        print(url
+        print(url)
         client = ScrapingBeeClient(api_key='3YJNM84LOHW51BJ8WMRLMNERNQ4F5U9CLVVNXQ8MUJZA4LL2IWRBIS48QK3PD3WXKQRTS8OIWQ32CJE8')
         response = client.get(url)
         response_body = response.content.decode('utf-8')
