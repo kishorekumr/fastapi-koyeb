@@ -244,7 +244,7 @@ def get_mc_history(symbol: str):
 
 
 @app.get("/history_it2/{exch}/{fincode}" ,response_model=List[Dict[str, Any]])
-async def get_it_history(exch: str, fincode: str):
+def get_it_history(exch: str, fincode: str):
     try:
         url=f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option={exch}&FinCode={fincode}&fmonth=OCT&fyear=2024&lmonth=NOV&lyear=2024&pageNo=1&PageSize=50'
         print(url)
