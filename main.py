@@ -252,18 +252,28 @@ def get_mc_history(symbol: str):
 
 
 
-@app.get("/history_it2/{exch}/{fincode}" , response_model=List[HistoricalData])
+@app.get("/history_it2/{exch}/{fincode}" ,response_model=Union[List[Dict[str, Any]], Dict[str, Any]])
 def get_it_history(exch: str, fincode: str):
     try:
         url=f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option={exch}&FinCode={fincode}&fmonth=OCT&fyear=2024&lmonth=NOV&lyear=2024&pageNo=1&PageSize=50'
         print(url)
         client = ScrapingBeeClient(api_key='3YJNM84LOHW51BJ8WMRLMNERNQ4F5U9CLVVNXQ8MUJZA4LL2IWRBIS48QK3PD3WXKQRTS8OIWQ32CJE8')
         response = client.get(url)
-        response_body = response.content.decode('utf-8')
-        parsed_data = json.loads(response_body) 
-        print(response.json())
-        print(parsed_data)
-        return pd.DataFrame(parsed_data)
+        if response.status_code == 200:
+            print("Response Data:", response.text)
+            data = response.json()
+            processed_data = []
+            for item in data:
+                processed_data.append({
+                    'time': item.get('HOYear'),
+                    'open': float(item.get('HOOpen', 0)),  # Add default for safety
+                    'high': float(item.get('HOHigh', 0)),
+                    'low': float(item.get('HOLow', 0)),
+                    'close': float(item.get('HOClose', 0)),
+                    'volume': int(item.get('HOVolume', 0)),
+                })
+        print(processed_data)
+        return processed_data
     except:
         return {"Message":"Error"}
 
