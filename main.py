@@ -254,7 +254,11 @@ def get_mc_history(symbol: str):
 async def get_it_history(exch: str, fincode: str):
     print(exch,fincode)
     url=f'https://www.indiratrade.com/Ajaxpages/companyprofile/CompanyHistoricalVol.aspx?Option={exch}&FinCode={fincode}&fmonth=OCT&fyear=2024&lmonth=NOV&lyear=2024&pageNo=1&PageSize=50'
-    browser = await launch()
+    browser = await launch(
+    headless=True,
+    executablePath='/app/.local/share/pyppeteer/local-chromium/575458/chrome-linux/chrome',
+    args=['--no-sandbox', '--disable-setuid-sandbox']
+    )
     page = await browser.newPage()
     await page.goto('https://example.com')
     await page.screenshot({'path': 'example.png'})
