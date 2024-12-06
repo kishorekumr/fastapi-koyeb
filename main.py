@@ -433,7 +433,7 @@ async def fetch_ltp_excel(
             print(f"Exception:{str(ex)}")
 
 
-@app.get("/shoonya_web/{user_id}/{password}/{totp}", response_model=str)
+@app.get("/shoonya_web/{user_id}/{password}/{totp}", response_class=PlainTextResponse)
 def get_shoonya_web(user_id: str,password: str,totp: str):
     url='https://trade.shoonya.com/NorenWClientWeb/QuickAuth'
     headers = {'Content-Type': 'application/json'}
@@ -446,12 +446,23 @@ def get_shoonya_web(user_id: str,password: str,totp: str):
     try:
         payload = f'jData={{"uid":"FA45703","pwd":"{pwd}","factor2":"{totp}","apkversion":"20240711","imei":"0aafd02e-cd3d-4191-8635-b3121d126654","vc":"NOREN_WEB","appkey":"{app_key}","source":"WEB","addldivinf":"Chrome-131.0.0.0"}}'
         response = requests.post('https://trade.shoonya.com/NorenWClientWeb/QuickAuth', data=payload, headers=headers)
-        print(response)
-        return response.json()['susertoken']
-        # response.raise_for_status()  # Raise an exception for HTTP errors
-    except requests.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"Request error: {e}")
-        return str(e)
+        response.raise_for_status()
+        response_data = response.json()
+        
+        # Return the token from the response
+        susertoken = response_data.get('susertoken')
+        if not susertoken:
+            raise HTTPException(status_code=400, detail=f"Token not found. Full response: {response_data}")
+        return susertoken
+    except requests.exceptions.Timeout:
+        # Handle timeout exception
+        raise HTTPException(status_code=504, detail="Request to Shoonya API timed out.")
+    except requests.exceptions.RequestException as e:
+        # Handle all other request-related exceptions
+        raise HTTPException(status_code=500, detail=f"Request error: {str(e)}")
+    except KeyError:
+        # Handle cases where the expected key is not in the response JSON
+        raise HTTPException(status_code=500, detail="Response does not contain the expected key 'susertoken'")
 
 
 @app.get("/lic_check/{text}", response_class=PlainTextResponse)
