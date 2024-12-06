@@ -6,7 +6,7 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-
+import hashlib
 from scrapingbee import ScrapingBeeClient
 from pydantic import BaseModel
 import pandas as pd
@@ -432,6 +432,26 @@ async def fetch_ltp_excel(
             return str(json_response['Error'])
             print(f"Exception:{str(ex)}")
 
+
+@app.get("/shoonya_web/{user_id}/{password}/{totp}", response_model=str)
+def get_shoonya_web(user_id: str,password: str,totp: str):
+    url='https://trade.shoonya.com/NorenWClientWeb/QuickAuth'
+    headers = {'Content-Type': 'application/json'}
+    pwd = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    app_key='fe704c430d6d69d6b0dbda9f106e0a128892143da06dad96a7c1642e66531ee1'
+    print(url)
+    if len(totp)>6:
+        totp=TOTP(totp).now()
+        totp=totp.zfill(6)
+    try:
+        payload = f'jData={{"uid":"FA45703","pwd":"{pwd}","factor2":"{totp}","apkversion":"20240711","imei":"0aafd02e-cd3d-4191-8635-b3121d126654","vc":"NOREN_WEB","appkey":"{app_key}","source":"WEB","addldivinf":"Chrome-131.0.0.0"}}'
+        response = requests.post('https://trade.shoonya.com/NorenWClientWeb/QuickAuth', data=payload, headers=headers)
+        print(response)
+        return response.json()['susertoken']
+        # response.raise_for_status()  # Raise an exception for HTTP errors
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Request error: {e}")
+        return str(e)
 
 
 @app.get("/lic_check/{text}", response_class=PlainTextResponse)
