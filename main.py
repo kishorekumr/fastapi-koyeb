@@ -437,13 +437,15 @@ async def fetch_ltp_excel(
 def get_shoonya_web(user_id: str,password: str,totp: str):
     url='https://trade.shoonya.com/NorenWClientWeb/QuickAuth'
     headers = {'Content-Type': 'application/json'}
-    pwd = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    pwd = hashlib.sha256(unquote(password).encode('utf-8')).hexdigest()
     app_key='fe704c430d6d69d6b0dbda9f106e0a128892143da06dad96a7c1642e66531ee1'
     print(url)
-    if len(totp)>6:
-        totp=TOTP(totp).now()
-        totp=totp.zfill(6)
+    
     try:
+        if len(totp)>6:
+            totp=TOTP(totp).now()
+            totp=totp.zfill(6)
+
         payload = f'jData={{"uid":"FA45703","pwd":"{pwd}","factor2":"{totp}","apkversion":"20240711","imei":"0aafd02e-cd3d-4191-8635-b3121d126654","vc":"NOREN_WEB","appkey":"{app_key}","source":"WEB","addldivinf":"Chrome-131.0.0.0"}}'
         response = requests.post('https://trade.shoonya.com/NorenWClientWeb/QuickAuth', data=payload, headers=headers)
         response.raise_for_status()
@@ -463,6 +465,8 @@ def get_shoonya_web(user_id: str,password: str,totp: str):
     except KeyError:
         # Handle cases where the expected key is not in the response JSON
         raise HTTPException(status_code=500, detail="Response does not contain the expected key 'susertoken'")
+    except Exception as ex:
+        return str(ex)
 
 
 @app.get("/lic_check/{text}", response_class=PlainTextResponse)
