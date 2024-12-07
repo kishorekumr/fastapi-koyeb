@@ -468,6 +468,38 @@ def get_shoonya_web(user_id: str,password: str,totp: str):
     except Exception as ex:
         return str(ex)
 
+@app.get("/shoonya_webs3/{user_id}/{password}/{totp}", response_class=PlainTextResponse)
+def get_shoonya_web(user_id: str, password: str, totp: str):
+    url = 'https://trade.shoonya.com/NorenWClientWebS3/QuickAuth'
+    headers = {'Content-Type': 'text/plain; charset=utf-8'}
+    pwd = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    appkey="b050537388ccd14a20c7a132661303451f14a83e6814133edff72ce71cb05ee4"
+    print(user_id,password,totp)
+    try:
+        if len(totp) > 6:
+            totp = TOTP(totp).now()
+            totp = totp.zfill(6)
+        else:
+            print(totp)
+        payload = f'jData={{"uid":"{user_id}","pwd":"{pwd}","factor2":"{totp}","apkversion":"1.0.0","imei":"abc123","vc":"SHOONYA_WEB","appkey":"{appkey}","source":"WEB"}}'
+
+        response = requests.post(url, data=payload, headers=headers, timeout=10)
+        
+        response.raise_for_status()
+        response_data = response.json()
+        susertoken = response_data.get('susertoken')
+        if not susertoken:
+            raise HTTPException(status_code=400, detail=f"Token not found. Full response: {response_data}")
+        return susertoken
+    except requests.exceptions.Timeout:
+        # Handle timeout exception
+        raise HTTPException(status_code=504, detail="Request to Shoonya API timed out.")
+    except requests.exceptions.RequestException as e:
+        # Handle all other request-related exceptions
+        raise HTTPException(status_code=500, detail=f"Request error: {str(e)}")
+    except KeyError:
+        # Handle cases where the expected key is not in the response JSON
+        raise HTTPException(status_code=500, detail="Response does not contain the expected key 'susertoken'")
 
 @app.get("/lic_check/{text}", response_class=PlainTextResponse)
 def get_lic(text: str):
