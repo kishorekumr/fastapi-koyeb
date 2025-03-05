@@ -100,7 +100,7 @@ def read_root():
 def read_root_head():
     return "OK"
 @app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
+def favicon():
     return FileResponse("favicon.ico")
     
 @app.get("/quote-derivative")
