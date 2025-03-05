@@ -18,6 +18,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse
 import httpx
 import requests
 import uvicorn
@@ -98,7 +99,10 @@ def read_root():
 @app.head("/")
 def read_root_head():
     return "OK"
-
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("favicon.ico")
+    
 @app.get("/quote-derivative")
 def get_quote_derivative(symbol: str):
     url = f'https://www.nseindia.com/api/quote-derivative?symbol={symbol}'
