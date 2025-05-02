@@ -42,7 +42,7 @@ import requests
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://kite.zerodha.com"],  # Specify allowed origins
+    allow_origins=["https://kite.zerodha.com","https://api.kite.trade"],  # Specify allowed origins
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
