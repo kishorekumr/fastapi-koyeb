@@ -32,7 +32,7 @@ import time
 import urllib3
 from urllib.parse import unquote, quote
 import base64
-
+import hashlib
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
@@ -91,6 +91,8 @@ def convert_to_iso8601(excel_time: float):
     return timestamp.strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
 
+
+
 @app.get("/")
 def read_root():
     #token = symbol_to_token["TCS"]
@@ -99,10 +101,89 @@ def read_root():
 @app.head("/")
 def read_root_head():
     return "OK"
+
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return FileResponse("favicon.ico")
-    
+
+class KiteLoginRequest(BaseModel):
+    account_username: str
+    account_password: str
+    account_two_fa: str
+    api_key: str
+    api_secret: str
+
+def Kite_Login_api(account_username, account_password, account_two_fa, api_key, api_secret):
+    reqSession = requests.Session()
+    loginurl = "https://kite.zerodha.com/api/login"
+    twofaUrl = "https://kite.zerodha.com/api/twofa"
+
+    # Step 1: login and get request_id
+    resp1 = reqSession.post(
+        loginurl,
+        data={"user_id": account_username, "password": account_password},
+        timeout=10
+    )
+    resp1.raise_for_status()
+    request_id = resp1.json()["data"]["request_id"]
+
+    # Step 2: submit 2FA
+    resp2 = reqSession.post(
+        twofaUrl,
+        data={
+            "user_id": account_username,
+            "request_id": request_id,
+            "twofa_value": account_two_fa,
+            "twofa_type": "totp",
+            "skip_session": "true"
+        },
+        timeout=10
+    )
+    resp2.raise_for_status()
+
+    # Step 3: capture the redirect URL and extract request_token
+    api_session = reqSession.get(f"https://kite.trade/connect/login?api_key={api_key}", timeout=10)
+    try:
+        request_token = api_session.url.split("request_token=")[1].split("&")[0]
+    except Exception:
+        raise Exception("Could not extract request_token from redirect URL")
+
+    # Step 4: generate checksum & exchange for access_token
+    checksum = hashlib.sha256(f"{api_key}{request_token}{api_secret}".encode("utf-8")).hexdigest()
+    token_resp = reqSession.post(
+        "https://api.kite.trade/session/token",
+        data={
+            "api_key": api_key,
+            "request_token": request_token,
+            "checksum": checksum
+        },
+        timeout=10
+    )
+    token_resp.raise_for_status()
+    data = token_resp.json()
+    if data.get("data", {}).get("access_token"):
+        return data["data"]["access_token"]
+    raise Exception("Failed to obtain access_token")
+
+@app.post("/kite_login")
+def kite_login(req: KiteLoginRequest):
+    """
+    Authenticate with Kite and return an access_token.
+    """
+    try:
+        token = Kite_Login_api(
+            req.account_username,
+            req.account_password,
+            req.account_two_fa,
+            req.api_key,
+            req.api_secret
+        )
+        return {"access_token": token}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @app.get("/quote-derivative")
 def get_quote_derivative(symbol: str):
     url = f'https://www.nseindia.com/api/quote-derivative?symbol={symbol}'
@@ -778,6 +859,24 @@ def get_holidays():
     except Exception as ex:
         return str(ex)
 
+import subprocess
+
+@app.post("/install-package")
+def install_package(package_name: str):
+    """
+    Installs a Python package using pip via subprocess.
+    Example: /install-package?package_name=selenium
+    """
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "install", package_name],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return {"message": f"Successfully installed '{package_name}'", "output": result.stdout}
+    except subprocess.CalledProcessError as e:
+        return {"error": f"Failed to install '{package_name}'", "details": e.stderr}
 
 # if __name__ == '__main__':
 #     try:
