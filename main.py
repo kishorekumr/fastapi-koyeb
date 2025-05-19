@@ -181,7 +181,56 @@ def kite_login(req: KiteLoginRequest):
         return {"access_token": token}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+class KiteWebLoginRequest(BaseModel):
+    account_username: str
+    account_password: str
+    account_two_fa: str
 
+def kite_web_login_api(kite_username: str, kite_password: str, kite_pin: str) -> str:
+    try:
+        session = requests.Session()
+
+        r = session.post(
+            'https://kite.zerodha.com/api/login',
+            data={
+                'user_id': kite_username,
+                'password': kite_password
+            },
+            timeout=10
+        )
+        r.raise_for_status()
+        request_id = r.json()['data']['request_id']
+
+        r2 = session.post(
+            'https://kite.zerodha.com/api/twofa',
+            data={
+                'request_id': request_id,
+                'twofa_value': kite_pin,
+                'user_id': kite_username
+            },
+            timeout=10
+        )
+        r2.raise_for_status()
+
+        cookies_dict = r2.cookies.get_dict()
+        if 'enctoken' not in cookies_dict:
+            raise Exception("enctoken not found in cookies")
+
+        return cookies_dict['enctoken']
+
+    except Exception as e:
+        raise Exception(f"Kite web login failed: {str(e)}")
+
+@app.post("/kite_web_login")
+def kite_web_login(req: KiteWebLoginRequest):
+    """
+    Login to Kite without API Key/Secret and return the enctoken.
+    """
+    try:
+        enctoken = kite_web_login_api(req.account_username, req.account_password, req.account_two_fa)
+        return {"enctoken": enctoken}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/quote-derivative")
