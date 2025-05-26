@@ -999,6 +999,86 @@ def list_all_holidays():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+def _make_nse_session():
+    """
+    1) start a session
+    2) land on /market-data to pick up cookies + JS blob
+    3) extract the nseappid token
+    returns: (session, token, common_headers)
+    """
+    landing_url = "https://www.nseindia.com/market-data"
+    common_headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/115.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;"
+                  "q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.nseindia.com/",
+        "Connection": "keep-alive",
+        # Chrome-style fetch headers
+        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Dest": "document",
+        "Upgrade-Insecure-Requests": "1",
+        "DNT": "1",
+        "Pragma": "no-cache",
+        "Cache-Control": "no-cache"
+    }
+
+    session = requests.Session()
+    resp = session.get(landing_url, headers=common_headers, timeout=10)
+    resp.raise_for_status()
+
+    m = re.search(r'"nseappid"\s*:\s*"([^"]+)"', resp.text)
+    if not m:
+        raise RuntimeError("Unable to find nseappid in landing HTML")
+    token = m.group(1)
+
+    return session, token, common_headers
+
+
+@app.get("/stock-indices")
+def get_stock_indices(
+    index: str = Query(
+        "NIFTY 50",
+        title="Index name",
+        description="Name of the index, e.g. 'NIFTY 50' or 'NIFTY TOTAL MARKET'"
+    )
+):
+    """
+    Fetches and returns the JSON from:
+      https://www.nseindia.com/api/equity-stockIndices?index=<index>
+    """
+
+    try:
+        session, token, headers = _make_nse_session()
+
+        # build the API URL
+        url = (
+            "https://www.nseindia.com/api/equity-stockIndices"
+            "?index=" + urllib.parse.quote_plus(index)
+        )
+
+        # upgrade headers for AJAX + token
+        api_headers = headers.copy()
+        api_headers.update({
+            "Accept": "*/*",                   # like the browser does
+            "X-Requested-With": "XMLHttpRequest",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Dest": "empty",
+            "nseappid": token,
+        })
+
+        resp = session.get(url, headers=api_headers, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+
+    except Exception as e:
+        # bubble up as a 500 with the error message
+        raise HTTPException(status_code=500, detail=str(e))
 
 import subprocess
 
