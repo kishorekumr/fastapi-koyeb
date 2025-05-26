@@ -931,6 +931,75 @@ def get_holidays():
         # explicitly return a 400/500 yourself.
         raise HTTPException(status_code=500, detail=str(e))
 
+
+def _fetch_holiday_data():
+    base_url   = "https://www.nseindia.com"
+    landing    = base_url + "/market-data"                         # ← not just “/”
+    api_url    = base_url + "/api/holiday-master?type=trading"
+
+    # Fully Chrome-like headers
+    common_headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/115.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;"
+                  "q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": base_url,
+        "Connection": "keep-alive",
+        # Chrome 115+ typical fetch client hints
+        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Dest": "document",
+        "Upgrade-Insecure-Requests": "1",
+        "DNT": "1",
+        "Pragma": "no-cache",
+        "Cache-Control": "no-cache"
+    }
+
+    with requests.Session() as session:
+        # 1) land on /market-data to get cookies + inline JS
+        r1 = session.get(landing, headers=common_headers, timeout=10)
+        r1.raise_for_status()
+
+        # 2) extract the nseappid token
+        match = re.search(r'"nseappid"\s*:\s*"([^"]+)"', r1.text)
+        if not match:
+            raise RuntimeError("nseappid token not found in HTML")
+        token = match.group(1)
+
+        # 3) prepare API headers (AJAX style)
+        api_headers = common_headers.copy()
+        api_headers.update({
+            "Accept": "application/json, text/plain, */*",
+            "X-Requested-With": "XMLHttpRequest",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Dest": "empty",
+            "nseappid": token
+        })
+
+        # 4) finally call the holidays API
+        r2 = session.get(api_url, headers=api_headers, timeout=10)
+        r2.raise_for_status()
+        return r2.json()
+
+@app.get("/holidays/all")
+def list_all_holidays():
+    try:
+        payload = _fetch_holiday_data()
+        cm      = payload.get("CM", [])
+        return {
+            "holidays": [
+                {"date":  h["tradingDate"], "purpose": h.get("purpose","").strip()}
+                for h in cm
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 import subprocess
 
 @app.post("/install-package")
