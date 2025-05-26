@@ -871,42 +871,65 @@ def get_investing(inv_id: int,end_date:str):
 @app.get("/holidays")
 def get_holidays():
     try:
-        print("holidays endpoint called")
         base_url = "https://www.nseindia.com/"
-        url='https://www.nseindia.com/api/holiday-master?type=trading'
-        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, '
-                                 'like Gecko) '
-                                 'Chrome/80.0.3987.149 Safari/537.36',
-                   'accept-language': 'en,gu;q=0.9,hi;q=0.8', 'accept-encoding': 'gzip, deflate, br'}
-        
+        api_url  = base_url + "api/holiday-master?type=trading"
+
+        # 1) browser-like headers for *all* requests
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36',
-            'Accept-Language': 'en,gu;q=0.9,hi;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'nseappid':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcGkubnNlIiwiYXVkIjoiYXBpLm5zZSIsImlhdCI6MTcyMjkyOTkwMCwiZXhwIjoxNzIyOTM3MTAwfQ.w1YSS7jf3Nn5KJfuQdYtbUBjDon2uYwMgLSRpg_Vi5k'
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/115.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml,application/xml;"
+                      "q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": base_url,
+            "Connection": "keep-alive"
         }
-        print(headers)
+
         with requests.Session() as session:
-            response1=session.get(base_url, headers=headers, timeout=10)  # Establish session
-            print(dict(response1.cookies))
-            response2 = session.get(url, headers=headers,timeout=10)  # Fetch data
-            
-            if response2.ok:
-                data = response2.json()
-                print(data)
-            else:
-                print(f"Error: {response2.status_code}")
-        json_data=response2.json()["CM"]
-        today=datetime.today().date
-        print(today)
-        if today in holiday_df['tradingDate']:
-            print("Holiday")
-        else:
-            print("Trading Day")
-        response2.raise_for_status()
-        return response2.json()
-    except Exception as ex:
-        return str(ex)
+            # 2) hit the home page to get cookies + inline JS
+            r_home = session.get(base_url, headers=headers, timeout=10)
+            r_home.raise_for_status()
+
+            # 3) scrape out the nseappid token from the inline scripts
+            #    It usually lives in a JS object like: "nseappid":"<TOKEN>"
+            text = r_home.text
+            m = re.search(r'"nseappid"\s*:\s*"([^"]+)"', text)
+            if not m:
+                raise RuntimeError("Could not find nseappid in homepage HTML")
+            token = m.group(1)
+
+            # 4) add the token header and some AJAX headers
+            api_headers = headers.copy()
+            api_headers.update({
+                "Accept": "application/json, text/plain, */*",
+                "X-Requested-With": "XMLHttpRequest",
+                "nseappid": token,
+            })
+
+            # 5) finally call the holiday API
+            r_api = session.get(api_url, headers=api_headers, timeout=10)
+            r_api.raise_for_status()
+
+            data = r_api.json()
+
+        # (Optional) quick check if today is a holiday
+        today = datetime.today().date().isoformat()
+        trading_dates = [ d["tradingDate"] for d in data.get("CM", []) ]
+        is_holiday = today not in trading_dates
+
+        return {
+            "today": today,
+            "isHoliday": is_holiday,
+            "holidays": data["CM"]
+        }
+
+    except Exception as e:
+        # FastAPI will return a 500 if you re-raise, or you can
+        # explicitly return a 400/500 yourself.
+        raise HTTPException(status_code=500, detail=str(e))
 
 import subprocess
 
