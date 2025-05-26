@@ -19,6 +19,7 @@ from fastapi.responses import PlainTextResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.responses import FileResponse
+from fastapi import Query
 import httpx
 import requests
 import uvicorn
