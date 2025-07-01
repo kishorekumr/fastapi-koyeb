@@ -43,7 +43,8 @@ import requests
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://kite.zerodha.com","https://api.kite.trade"],  # Specify allowed origins
+    # allow_origins=["https://kite.zerodha.com","https://api.kite.trade"],  # Specify allowed origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
@@ -118,7 +119,9 @@ def Kite_Login_api(account_username, account_password, account_two_fa, api_key, 
     reqSession = requests.Session()
     loginurl = "https://kite.zerodha.com/api/login"
     twofaUrl = "https://kite.zerodha.com/api/twofa"
-
+    if len(account_two_fa)>6:
+        account_two_fa=TOTP(account_two_fa).now()
+        account_two_fa=account_two_fa.zfill(6)
     # Step 1: login and get request_id
     resp1 = reqSession.post(
         loginurl,
