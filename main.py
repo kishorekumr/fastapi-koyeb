@@ -676,6 +676,11 @@ def get_shoonya_web(user_id: str, password: str, totp: str):
         # Handle cases where the expected key is not in the response JSON
         raise HTTPException(status_code=500, detail="Response does not contain the expected key 'susertoken'")
 
+@app.post("/shoonya_api/quickauth-debug")
+async def qa_debug(raw: dict):
+    # just echo back whatever we got
+    return {"got": raw}
+
 class QuickAuthReq(BaseModel):
     userid:     str
     password:   str
@@ -696,7 +701,7 @@ async def quickauth(req: QuickAuthReq):
     }
     """
     # 1) Compute factor2 via TOTP
-    if totp_secret>6:
+    if len(totp_secret)>6:
         factor2 = TOTP(req.totp_secret).now().zfill(6)
     else:
         factor2=totp_secret
