@@ -236,6 +236,43 @@ def kite_web_login(req: KiteWebLoginRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.api_route(
+    "/kite_api_proxy/{full_path:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+)
+async def kite_proxy(request: Request, full_path: str):
+    # 1) Build the real Kite URL
+    target_url = f"https://api.kite.trade/{full_path}"
+
+    # 2) Copy through only the headers Kite cares about
+    forwarded_headers = {
+        # preserve auth so “token APIKEY:ACCESSTOKEN” still works
+        "Authorization": request.headers.get("authorization", ""),
+        # content-type for POST bodies
+        "Content-Type": request.headers.get("content-type", ""),
+    }
+
+    # 3) Forward query-params and body
+    async with httpx.AsyncClient(timeout=10) as client:
+        proxy_resp = await client.request(
+            request.method,
+            target_url,
+            headers=forwarded_headers,
+            params=request.query_params,
+            content=await request.body()
+        )
+
+    # 4) Relay Kite’s response (status, headers, body) back to the frontend
+    return Response(
+        content=proxy_resp.content,
+        status_code=proxy_resp.status_code,
+        headers={
+            # You can whitelist headers here if you like:
+            k: v for k, v in proxy_resp.headers.items()
+            if k.lower() in ("content-type", "x-kite-version", "x-rate-limit-limit")
+        }
+    )
+
 
 @app.get("/quote-derivative")
 def get_quote_derivative(symbol: str):
