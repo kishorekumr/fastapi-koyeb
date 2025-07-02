@@ -741,13 +741,11 @@ async def quickauth(req: QuickAuthReq):
     except requests.RequestException as e:
         # network / HTTP errors talking to Shoonya
         detail = e.response.text if getattr(e, "response", None) else str(e)
-        print("Shoonya HTTP error:\n%s", traceback.format_exc())
         raise HTTPException(502, detail=f"Shoonya upstream failure: {detail}")
 
     except Exception as e:
         # anything else: TOTP errors, JSON parse errors, etc.
         tb = traceback.format_exc()
-        print("Internal handler error:\n%s", tb)
         raise HTTPException(500, detail=f"Internal error: {str(e)}")
 
 @app.get("/lic_check/{text}", response_class=PlainTextResponse)
