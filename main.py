@@ -676,6 +676,62 @@ def get_shoonya_web(user_id: str, password: str, totp: str):
         # Handle cases where the expected key is not in the response JSON
         raise HTTPException(status_code=500, detail="Response does not contain the expected key 'susertoken'")
 
+
+@app.get("/shoonya_api/{user_id}/{password}/{totp_secret}/{api_key}/{imei}")
+async def shoonya_quickauth(
+    user_id: str,
+    password: str,
+    totp_secret: str,
+    api_key: str,
+    imei: str
+):
+    # 1) Generate the TOTP factor2
+    if len(totp_secret)>6:
+        totp = TOTP(totp_secret).now()
+        factor2 = totp.zfill(6)
+    else:
+        factor2 = totp_secret
+
+    # 2) Hash password and appkey
+    pwd_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
+    u_app_key = f"{user_id}|{api_key}"
+    app_key_hash = hashlib.sha256(u_app_key.encode("utf-8")).hexdigest()
+
+    # 3) Build the jData payload
+    values = {
+        "source": "API",
+        "apkversion": "1.0.0",
+        "uid": user_id,
+        "pwd": pwd_hash,
+        "factor2": factor2,
+        "vc": f"{user_id}_U",
+        "appkey": app_key_hash,
+        "imei": imei
+    }
+    payload = {
+        "jData": json.dumps(values)
+    }
+
+    # 4) Fire the POST to Shoonya
+    try:
+        resp = requests.post(
+            "https://api.shoonya.com/NorenWClientTP/QuickAuth",
+            data=payload,
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        raise HTTPException(502, detail=f"Shoonya request failed: {e}")
+
+    # 5) Parse and return
+    result = resp.json()
+    if result.get("stat") != "Ok":
+        # propagate the Shoonya error
+        raise HTTPException(400, detail=result)
+
+    # Success → return the full JSON (including susertoken)
+    return JSONResponse(content=result)
+
 @app.get("/lic_check/{text}", response_class=PlainTextResponse)
 def get_lic(text: str):
     # return str
