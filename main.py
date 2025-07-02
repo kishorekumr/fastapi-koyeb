@@ -14,6 +14,7 @@ import numpy as np
 import requests
 from fastapi.responses import Response
 from fastapi import Request
+from fastapi import Body
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
 from fastapi.encoders import jsonable_encoder
