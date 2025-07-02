@@ -685,7 +685,7 @@ def get_shoonya_web(user_id: str, password: str, totp: str):
         raise HTTPException(status_code=500, detail="Response does not contain the expected key 'susertoken'")
 
 @app.get("/shoonya_api/{user_id}/{password}/{totp}/{api_key}/{imei}", response_class=PlainTextResponse)
-def get_shoonya_web(user_id: str, password: str, totp: str):
+def get_shoonya_web(user_id: str, password: str, totp: str, api_key: str, imei: str):
     url = 'https://api.shoonya.com/NorenWClientTP/QuickAuth'
     headers = {'Content-Type': 'text/plain; charset=utf-8'}
     pwd = hashlib.sha256(unquote(password).encode('utf-8')).hexdigest()
