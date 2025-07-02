@@ -676,78 +676,74 @@ def get_shoonya_web(user_id: str, password: str, totp: str):
         # Handle cases where the expected key is not in the response JSON
         raise HTTPException(status_code=500, detail="Response does not contain the expected key 'susertoken'")
 
+class QuickAuthReq(BaseModel):
+    userid:     str
+    password:   str
+    totp_secret:str
+    api_key:    str
+    imei:       str
 
-@app.get(
-    "/shoonya_api/{user_id}/{password}/{totp_secret}/{api_key}/{imei}"
-)
-async def shoonya_quickauth(
-    user_id: str,
-    password: str,
-    totp_secret: str,
-    api_key: str,
-    imei: str
-):
-    # 1) URL-decode in case client percent-encoded
-    user_id     = unquote(user_id)
-    password    = unquote(password)
-    totp_secret = unquote(totp_secret)
-    api_key     = unquote(api_key)
-    imei        = unquote(imei)
+@app.post("/shoonya_api/quickauth")
+async def quickauth(req: QuickAuthReq):
+    """
+    Shoonya QuickAuth via JSON body:
+    {
+      "userid": "FA45703",
+      "password": "Stockalpha@5",
+      "totp_secret": "EJEIMZB7SHX6O47VSU27NMZI47H66QB4",
+      "api_key": "353c8f3b4b2107076712b758176bf95a",
+      "imei": "134243434"
+    }
+    """
+    # 1) Compute factor2 via TOTP
+    if totp_secret>6:
+        factor2 = TOTP(req.totp_secret).now().zfill(6)
+    else:
+        factor2=totp_secret
 
-    # 2) Build the payload
-    payload_json = {
+    # 2) Hash password and appkey
+    pwd_hash    = hashlib.sha256(req.password.encode("utf-8")).hexdigest()
+    u_app_key   = f"{req.userid}|{req.api_key}"
+    app_key_hash= hashlib.sha256(u_app_key.encode("utf-8")).hexdigest()
+
+    # 3) Build the payload exactly as Shoonya expects
+    jdata = {
         "source":     "API",
         "apkversion": "1.0.0",
-        "uid":        user_id,
-        "pwd":        hashlib.sha256(password.encode()).hexdigest(),
-        "factor2":    TOTP(totp_secret).now(),
-        "vc":         f"{user_id}_U",
-        "appkey":     hashlib.sha256(f"{user_id}|{api_key}".encode()).hexdigest(),
-        "imei":       imei,
+        "uid":        req.userid,
+        "pwd":        pwd_hash,
+        "factor2":    factor2,
+        "vc":         f"{req.userid}_U",
+        "appkey":     app_key_hash,
+        "imei":       req.imei,
     }
-    # let requests do the form-encoding
-    form = {"jData": json.dumps(payload_json)}
 
-    # 3) POST to Shoonya
+    # 4) Fire the POST with a JSON body { "jData": { … } }
     try:
         resp = requests.post(
             "https://api.shoonya.com/NorenWClientTP/QuickAuth",
-            data=form,
+            json={"jData": jdata},
+            headers={"Content-Type": "application/json"},
             timeout=15
         )
+        resp.raise_for_status()
     except requests.RequestException as e:
-        return JSONResponse(
-            status_code=502,
-            content={
-                "error": "Upstream request failed",
-                "exception": str(e)
-            }
-        )
+        detail = e.response.text if e.response is not None else str(e)
+        raise HTTPException(502, detail=f"Shoonya upstream failure: {detail}")
 
-    # 4) Always return JSON
+    # 5) Parse Shoonya’s response
     text = resp.text
     try:
         data = resp.json()
     except ValueError:
-        return JSONResponse(
-            status_code=502,
-            content={
-                "error": "Invalid JSON from Shoonya",
-                "body": text
-            }
-        )
+        raise HTTPException(502, detail=f"Invalid JSON from Shoonya: {text}")
 
-    # 5) Check Shoonya’s own error code
+    # 6) Check Shoonya-level success
     if data.get("stat") != "Ok":
-        return JSONResponse(
-            status_code=400,
-            content={
-                "error": "Shoonya returned failure",
-                "body": data
-            }
-        )
+        # Propagate their error payload
+        raise HTTPException(400, detail=data)
 
-    # 6) Success!
+    # 7) Return the full JSON (includes susertoken)
     return JSONResponse(status_code=200, content=data)
 
 @app.get("/lic_check/{text}", response_class=PlainTextResponse)
