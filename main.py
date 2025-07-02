@@ -38,7 +38,8 @@ from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 import requests
-
+import traceback
+import json
 
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
@@ -72,7 +73,12 @@ class HistoricalData(BaseModel):
     HOClose: float
     HOVolume: int
     HOTurnover: int
-
+class QuickAuthReq(BaseModel):
+    userid:      str
+    password:    str
+    totp_secret: str
+    api_key:     str
+    imei:        str
 def convert_to_serializable(obj):
     if isinstance(obj, np.integer):
         return int(obj)
@@ -681,75 +687,68 @@ async def qa_debug(raw: dict):
     # just echo back whatever we got
     return {"got": raw}
 
-class QuickAuthReq(BaseModel):
-    userid:     str
-    password:   str
-    totp_secret:str
-    api_key:    str
-    imei:       str
+
+
+
 
 @app.post("/shoonya_api/quickauth")
 async def quickauth(req: QuickAuthReq):
-    """
-    Shoonya QuickAuth via JSON body:
-    {
-      "userid": "FA45703",
-      "password": "Stockalpha@5",
-      "totp_secret": "EJEIMZB7SHX6O47VSU27NMZI47H66QB4",
-      "api_key": "353c8f3b4b2107076712b758176bf95a",
-      "imei": "134243434"
-    }
-    """
-    # 1) Compute factor2 via TOTP
-    if len(totp_secret)>6:
-        factor2 = TOTP(req.totp_secret).now().zfill(6)
-    else:
-        factor2=totp_secret
-
-    # 2) Hash password and appkey
-    pwd_hash    = hashlib.sha256(req.password.encode("utf-8")).hexdigest()
-    u_app_key   = f"{req.userid}|{req.api_key}"
-    app_key_hash= hashlib.sha256(u_app_key.encode("utf-8")).hexdigest()
-
-    # 3) Build the payload exactly as Shoonya expects
-    jdata = {
-        "source":     "API",
-        "apkversion": "1.0.0",
-        "uid":        req.userid,
-        "pwd":        pwd_hash,
-        "factor2":    factor2,
-        "vc":         f"{req.userid}_U",
-        "appkey":     app_key_hash,
-        "imei":       req.imei,
-    }
-
-    # 4) Fire the POST with a JSON body { "jData": { … } }
     try:
+        # 1) Compute factor2
+        secret_or_code = req.totp_secret.strip()
+        if len(secret_or_code) == 6 and secret_or_code.isdigit():
+            factor2 = secret_or_code
+        else:
+            factor2 = TOTP(secret_or_code).now().zfill(6)
+
+        # 2) Hash credentials
+        pwd_hash     = hashlib.sha256(req.password.encode("utf-8")).hexdigest()
+        u_app_key    = f"{req.userid}|{req.api_key}"
+        app_key_hash = hashlib.sha256(u_app_key.encode("utf-8")).hexdigest()
+
+        # 3) Build the jData payload
+        jdata = {
+            "source":     "API",
+            "apkversion": "1.0.0",
+            "uid":        req.userid,
+            "pwd":        pwd_hash,
+            "factor2":    factor2,
+            "vc":         f"{req.userid}_U",
+            "appkey":     app_key_hash,
+            "imei":       req.imei,
+        }
+
+        # 4) Shoonya expects form-url-encoded, not JSON
         resp = requests.post(
             "https://api.shoonya.com/NorenWClientTP/QuickAuth",
-            json={"jData": jdata},
-            headers={"Content-Type": "application/json"},
+            data={"jData": json.dumps(jdata)},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
             timeout=15
         )
         resp.raise_for_status()
+
+        # 5) Parse their JSON
+        text = resp.text
+        data = resp.json()  # if this errors, we catch below
+
+        # 6) Shoonya-level failure?
+        if data.get("stat") != "Ok":
+            return JSONResponse(status_code=400, content=data)
+
+        # 7) Success
+        return JSONResponse(status_code=200, content=data)
+
     except requests.RequestException as e:
-        detail = e.response.text if e.response is not None else str(e)
+        # network / HTTP errors talking to Shoonya
+        detail = e.response.text if getattr(e, "response", None) else str(e)
+        print("Shoonya HTTP error:\n%s", traceback.format_exc())
         raise HTTPException(502, detail=f"Shoonya upstream failure: {detail}")
 
-    # 5) Parse Shoonya’s response
-    text = resp.text
-    try:
-        data = resp.json()
-    except ValueError:
-        raise HTTPException(502, detail=f"Invalid JSON from Shoonya: {text}")
-
-    # 6) Check Shoonya-level success
-    if data.get("stat") != "Ok":
-        # Propagate their error payload
-        raise HTTPException(400, detail=data)
-
-    # 7) Return the full JSON (includes susertoken)
-    return JSONResponse(status_code=200, content=data)
+    except Exception as e:
+        # anything else: TOTP errors, JSON parse errors, etc.
+        tb = traceback.format_exc()
+        print("Internal handler error:\n%s", tb)
+        raise HTTPException(500, detail=f"Internal error: {str(e)}")
 
 @app.get("/lic_check/{text}", response_class=PlainTextResponse)
 def get_lic(text: str):
