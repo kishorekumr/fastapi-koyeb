@@ -700,7 +700,7 @@ async def shoonya_quickauth(
         "apkversion": "1.0.0",
         "uid":        user_id,
         "pwd":        hashlib.sha256(password.encode()).hexdigest(),
-        "factor2":    pyotp.TOTP(totp_secret).now(),
+        "factor2":    TOTP(totp_secret).now(),
         "vc":         f"{user_id}_U",
         "appkey":     hashlib.sha256(f"{user_id}|{api_key}".encode()).hexdigest(),
         "imei":       imei,
