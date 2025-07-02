@@ -688,7 +688,7 @@ def get_shoonya_web(user_id: str, password: str, totp: str):
 def get_shoonya_web(user_id: str, password: str, totp: str, api_key: str, imei: str):
     url = 'https://api.shoonya.com/NorenWClientTP/QuickAuth'
     headers = {'Content-Type': 'text/plain; charset=utf-8'}
-    pwd = hashlib.sha256(unquote(password).encode('utf-8')).hexdigest()
+    pwd = hashlib.sha256(password.encode('utf-8')).hexdigest()
     app_key_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
     print(user_id,password,totp)
     try:
