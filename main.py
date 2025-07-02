@@ -584,7 +584,7 @@ def get_shoonya_web(user_id: str,password: str,totp: str):
             totp=TOTP(totp).now()
             totp=totp.zfill(6)
 
-        payload = f'jData={{"uid":"FA45703","pwd":"{pwd}","factor2":"{totp}","apkversion":"20240711","imei":"0aafd02e-cd3d-4191-8635-b3121d126654","vc":"NOREN_WEB","appkey":"{app_key}","source":"WEB","addldivinf":"Chrome-131.0.0.0"}}'
+        payload = f'jData={{"uid":{user_id},"pwd":"{pwd}","factor2":"{totp}","apkversion":"20240711","imei":"0aafd02e-cd3d-4191-8635-b3121d126654","vc":"NOREN_WEB","appkey":"{app_key}","source":"WEB","addldivinf":"Chrome-131.0.0.0"}}'
         response = requests.post('https://trade.shoonya.com/NorenWClientWeb/QuickAuth', data=payload, headers=headers)
         response.raise_for_status()
         response_data = response.json()
