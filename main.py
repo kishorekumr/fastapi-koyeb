@@ -684,71 +684,44 @@ def get_shoonya_web(user_id: str, password: str, totp: str):
         # Handle cases where the expected key is not in the response JSON
         raise HTTPException(status_code=500, detail="Response does not contain the expected key 'susertoken'")
 
-@app.post("/shoonya_api/quickauth-debug")
-async def qa_debug(raw: dict):
-    # just echo back whatever we got
-    return {"got": raw}
-
-
-
-
-
-@app.post("/shoonya_api/quickauth")
-async def quickauth(req: QuickAuthReq):
+@app.get("/shoonya_api/{user_id}/{password}/{totp}/{api_key}/{imei}", response_class=PlainTextResponse)
+def get_shoonya_web(user_id: str, password: str, totp: str):
+    url = 'https://api.shoonya.com/NorenWClientTP/QuickAuth'
+    headers = {'Content-Type': 'text/plain; charset=utf-8'}
+    pwd = hashlib.sha256(unquote(password).encode('utf-8')).hexdigest()
+    app_key_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+    print(user_id,password,totp)
     try:
-        # 1) Compute factor2
-        secret_or_code = req.totp_secret.strip()
-        if len(secret_or_code) == 6 and secret_or_code.isdigit():
-            factor2 = secret_or_code
+        if len(totp) > 6:
+            totp = TOTP(totp).now()
+            totp = totp.zfill(6)
         else:
-            factor2 = TOTP(secret_or_code).now().zfill(6)
+            print(totp)
+        payload = f'jData={{"uid":"{user_id}","pwd":"{pwd}","factor2":"{totp}","apkversion":"1.0.0","imei":"abc123","vc":"{user_id}_U","appkey":"{app_key_hash}","source":"API"}}'
 
-        # 2) Hash credentials
-        pwd_hash     = hashlib.sha256(req.password.encode("utf-8")).hexdigest()
-        u_app_key    = f"{req.userid}|{req.api_key}"
-        app_key_hash = hashlib.sha256(u_app_key.encode("utf-8")).hexdigest()
+        response = requests.post(url, data=payload, headers=headers, timeout=10)
+        
+        response.raise_for_status()
+        response_data = response.json()
+        susertoken = response_data.get('susertoken')
+        if not susertoken:
+            raise HTTPException(status_code=400, detail=f"Token not found. Full response: {response_data}")
+        return susertoken
+    except requests.exceptions.Timeout:
+        # Handle timeout exception
+        raise HTTPException(status_code=504, detail="Request to Shoonya API timed out.")
+    except requests.exceptions.RequestException as e:
+        # Handle all other request-related exceptions
+        raise HTTPException(status_code=500, detail=f"Request error: {str(e)}")
+    except KeyError:
+        # Handle cases where the expected key is not in the response JSON
+        raise HTTPException(status_code=500, detail="Response does not contain the expected key 'susertoken'")
 
-        # 3) Build the jData payload
-        jdata = {
-            "source":     "API",
-            "apkversion": "1.0.0",
-            "uid":        req.userid,
-            "pwd":        pwd_hash,
-            "factor2":    factor2,
-            "vc":         f"{req.userid}_U",
-            "appkey":     app_key_hash,
-            "imei":       req.imei,
-        }
 
-        # 4) Shoonya expects form-url-encoded, not JSON
-        resp = requests.post(
-            "https://api.shoonya.com/NorenWClientTP/QuickAuth",
-            data={"jData": json.dumps(jdata)},
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            timeout=15
-        )
-        resp.raise_for_status()
 
-        # 5) Parse their JSON
-        text = resp.text
-        data = resp.json()  # if this errors, we catch below
 
-        # 6) Shoonya-level failure?
-        if data.get("stat") != "Ok":
-            return JSONResponse(status_code=400, content=data)
 
-        # 7) Success
-        return JSONResponse(status_code=200, content=data)
 
-    except requests.RequestException as e:
-        # network / HTTP errors talking to Shoonya
-        detail = e.response.text if getattr(e, "response", None) else str(e)
-        raise HTTPException(502, detail=f"Shoonya upstream failure: {detail}")
-
-    except Exception as e:
-        # anything else: TOTP errors, JSON parse errors, etc.
-        tb = traceback.format_exc()
-        raise HTTPException(500, detail=f"Internal error: {str(e)}")
 
 @app.get("/lic_check/{text}", response_class=PlainTextResponse)
 def get_lic(text: str):
