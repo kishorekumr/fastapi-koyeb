@@ -282,18 +282,13 @@ async def kite_proxy(request: Request, full_path: str):
     )
 
 
-from fastapi import FastAPI, Request
-from fastapi.responses import Response
-import httpx
-import json
 
-app = FastAPI()
 
-XTS_BASE_URL = "https://moxtsapi.motilaloswal.com:3000"  # or use symphony.acagarwal.com:3000 if needed
+ # or use symphony.acagarwal.com:3000 if needed
 
-@app.api_route("/xts/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+@app.api_route("/motilal_api_proxy/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def xts_proxy(request: Request, full_path: str):
-    # 1. Build the target XTS URL
+    XTS_BASE_URL = "https://moxtsapi.motilaloswal.com:3000" 
     target_url = f"{XTS_BASE_URL}/{full_path}"
 
     # 2. Forward only necessary headers
