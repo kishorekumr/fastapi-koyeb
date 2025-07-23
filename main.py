@@ -112,25 +112,19 @@ def read_root():
 def read_root_head():
     return "OK"
 
-@app.get("/koyeb_ping/{encoded_url:path}")
-async def ping_url(encoded_url: str):
-    # Decode URL from path-safe format
-    try:
-        target_url = urllib.parse.unquote(encoded_url)
-    except Exception as e:
-        return {"error": f"Invalid URL encoding: {e}"}
-
+@app.get("/koyeb_ping")
+async def ping_url(url: str = Query(..., description="Full target URL to ping")):
     try:
         async with httpx.AsyncClient(timeout=5.0, verify=False) as client:
-            response = await client.get(target_url)
-            return {
-                "url": target_url,
-                "status_code": response.status_code,
-                "headers": dict(response.headers),
-                "preview": response.text[:200]  # first 200 chars of body
-            }
+            response = await client.get(url)
+        return {
+            "url": url,
+            "status_code": response.status_code,
+            "headers": dict(response.headers),
+            "preview": response.text[:200]
+        }
     except Exception as e:
-        return {"url": target_url, "error": str(e)}
+        return {"url": url, "error": str(e)}
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return FileResponse("favicon.ico")
