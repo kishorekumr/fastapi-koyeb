@@ -282,6 +282,58 @@ async def kite_proxy(request: Request, full_path: str):
     )
 
 
+from fastapi import FastAPI, Request
+from fastapi.responses import Response
+import httpx
+import json
+
+app = FastAPI()
+
+XTS_BASE_URL = "https://moxtsapi.motilaloswal.com:3000"  # or use symphony.acagarwal.com:3000 if needed
+
+@app.api_route("/xts/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def xts_proxy(request: Request, full_path: str):
+    # 1. Build the target XTS URL
+    target_url = f"{XTS_BASE_URL}/{full_path}"
+
+    # 2. Forward only necessary headers
+    forwarded_headers = {
+        "Authorization": request.headers.get("authorization", ""),
+        "Content-Type": request.headers.get("content-type", ""),
+        "userID": request.headers.get("userid", ""),
+    }
+
+    # 3. Handle login endpoint: /user/session → add source=WEBAPI
+    body = await request.body()
+    if full_path.lower().endswith("user/session") and request.method == "POST":
+        try:
+            data = json.loads(body.decode())
+            data["source"] = "WEBAPI"
+            body = json.dumps(data).encode()
+        except Exception as e:
+            return Response(content=f"❌ Failed to parse or modify login body: {e}", status_code=400)
+
+    # 4. Forward the request
+    async with httpx.AsyncClient(timeout=15, verify=False) as client:
+        proxy_resp = await client.request(
+            method=request.method,
+            url=target_url,
+            headers=forwarded_headers,
+            params=request.query_params,
+            content=body
+        )
+
+    # 5. Relay response
+    return Response(
+        content=proxy_resp.content,
+        status_code=proxy_resp.status_code,
+        headers={
+            k: v for k, v in proxy_resp.headers.items()
+            if k.lower() in ("content-type", "x-xts-version")
+        }
+    )
+
+
 @app.get("/history/{symbol}",response_model=List[DataFrameRow]) #,response_model=List[Dict[str, Any]]
 def get_mc_history(symbol: str):
 
