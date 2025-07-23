@@ -42,7 +42,7 @@ import numpy as np
 import requests
 import traceback
 import json
-
+import urllib.parse
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
