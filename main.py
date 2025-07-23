@@ -113,18 +113,36 @@ def read_root_head():
     return "OK"
 
 @app.get("/koyeb_ping")
-async def ping_url(url: str = Query(..., description="Full target URL to ping")):
+async def ping_url(url: str = Query(..., description="Target URL to ping")):
+    if not url.startswith("http://") and not url.startswith("https://"):
+        return {"url": url, "error": "URL must start with http:// or https://"}
+
     try:
-        async with httpx.AsyncClient(timeout=5.0, verify=False) as client:
-            response = await client.get(url)
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0), verify=False) as client:
+            resp = await client.get(url)
+
+        # Check if response is non-200
+        if resp.status_code != 200:
+            return {
+                "url": url,
+                "status_code": resp.status_code,
+                "error": f"Non-200 status: {resp.status_code}",
+                "preview": resp.text[:200]
+            }
+
         return {
             "url": url,
-            "status_code": response.status_code,
-            "headers": dict(response.headers),
-            "preview": response.text[:200]
+            "status_code": resp.status_code,
+            "headers": dict(resp.headers),
+            "preview": resp.text[:200]
         }
+
+    except httpx.ConnectTimeout:
+        return {"url": url, "error": "Connect timeout"}
+    except httpx.RequestError as e:
+        return {"url": url, "error": f"Request failed: {str(e)}"}
     except Exception as e:
-        return {"url": url, "error": str(e)}
+        return {"url": url, "error": f"Unexpected error: {str(e)}"}
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return FileResponse("favicon.ico")
