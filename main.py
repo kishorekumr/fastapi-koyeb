@@ -158,10 +158,12 @@ def Kite_Login_api(account_username, account_password, account_two_fa, api_key, 
     reqSession = requests.Session()
     loginurl = "https://kite.zerodha.com/api/login"
     twofaUrl = "https://kite.zerodha.com/api/twofa"
+    print(account_two_fa)
     if len(account_two_fa)>6:
         account_two_fa=TOTP(account_two_fa).now()
         account_two_fa=account_two_fa.zfill(6)
     # Step 1: login and get request_id
+    print(account_username, account_password, account_two_fa, api_key, api_secret)
     resp1 = reqSession.post(
         loginurl,
         data={"user_id": account_username, "password": account_password},
@@ -205,6 +207,7 @@ def Kite_Login_api(account_username, account_password, account_two_fa, api_key, 
     token_resp.raise_for_status()
     data = token_resp.json()
     if data.get("data", {}).get("access_token"):
+        print(data["data"]["access_token"])
         return data["data"]["access_token"]
     raise Exception("Failed to obtain access_token")
 
@@ -213,6 +216,7 @@ def kite_login(req: KiteLoginRequest):
     """
     Authenticate with Kite and return an access_token.
     """
+    
     try:
         token = Kite_Login_api(
             req.account_username,
