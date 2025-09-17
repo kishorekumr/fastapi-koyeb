@@ -317,6 +317,266 @@ async def kite_proxy(request: Request, full_path: str):
     )
 
 
+class KiteLoginRequestV2(BaseModel):
+    account_username: str
+    account_password: str
+    api_key: str
+    api_secret: str
+    # Optional fields:
+    account_two_fa: Optional[str] = None     # 6-digit code OR TOTP secret; omit to get twofa_required
+    request_id: Optional[str] = None         # skip Step 1 if you already have it
+    defer_twofa: bool = False                # force twofa_required even if TOTP secret/code is provided
+
+# ---------- Helpers ----------
+def normalize_msg(x: Any) -> str:
+    try:
+        if isinstance(x, str):
+            return x.lower()
+        msg = x.get("message") or x.get("error") or x.get("data") or x
+        return (str(msg) if not isinstance(msg, (dict, list)) else json.dumps(msg)).lower()
+    except Exception:
+        return str(x).lower()
+
+def is_captcha_required(payload_or_text: Any) -> bool:
+    low = normalize_msg(payload_or_text)
+    return any(w in low for w in ["captcha", "recaptcha", "robot", "verify you are human", "human verification"])
+
+def parse_twofa_info(login_json: Optional[dict]) -> Dict[str, Any]:
+    data = (login_json or {}).get("data") or {}
+    status = (data.get("twofa_status") or "").lower() or None
+    types = data.get("twofa_types") or []
+    ttype = data.get("twofa_type")
+    enabled = (status in {"active", "enabled", "on"}) or bool(types) or bool(ttype)
+    return {"enabled": bool(enabled), "status": status, "type": ttype, "types": types}
+
+def raise_kite_error(resp: requests.Response, step: str, default_status=502):
+    try:
+        payload = resp.json()
+    except Exception:
+        payload = {"text": resp.text}
+
+    # Explicit CAPTCHA check
+    if is_captcha_required(payload):
+        raise HTTPException(
+            status_code=403,
+            detail={"code": "captcha_required", "step": step, "message": payload.get("message") or payload, "upstream": payload},
+        )
+
+    msg = payload.get("message") or payload.get("error") or payload.get("text") or str(payload)
+    low = normalize_msg(payload if isinstance(payload, dict) else msg)
+
+    mapping = [
+        (["invalid username or password", "invalid user_id or password", "invalid userid or password", "invalid credentials", "user not found"], ("invalid_credentials", 401)),
+        (["password expired", "account locked", "blocked"], ("account_locked", 403)),
+        (["invalid twofa", "twofa failed", "otp invalid", "totp invalid", "pin invalid"], ("invalid_twofa", 401)),
+        (["checksum", "checksum failed", "invalid checksum"], ("invalid_checksum", 401)),
+        (["invalid api_key", "api key invalid", "api_key invalid"], ("invalid_api_key", 401)),
+        (["invalid request_token", "request token invalid"], ("invalid_request_token", 401)),
+        (["already redeemed", "request token already used"], ("request_token_redeemed", 409)),
+        (["session expired", "invalid session"], ("session_expired", 401)),
+        (["rate limit", "too many requests"], ("rate_limited", 429)),
+        (["upstream timeout", "gateway timeout"], ("upstream_timeout", 504)),
+    ]
+    code, status = "kite_error", resp.status_code or default_status
+    for needles, (c, s) in mapping:
+        if any(n in low for n in needles):
+            code, status = c, s
+            break
+    if resp.status_code and resp.status_code >= 400:
+        status = resp.status_code
+
+    raise HTTPException(status_code=status, detail={"code": code, "step": step, "message": msg, "upstream": payload})
+
+# ---------- Endpoint ----------
+@app.post("/kite_login_v2")
+def kite_login_v2(req: KiteLoginRequestV2):
+    """
+    Authenticate with Zerodha Kite.
+    - If password OK and 2FA is enabled, returns {"status":"twofa_required", "request_id": "...", ...}
+    - If TOTP invalid, returns 401 with attempts_remaining.
+    - On success, returns access_token + request_token + twofa info.
+    """
+    s = requests.Session()
+    s.headers.update({
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) Python/requests FastAPI",
+        "Accept": "application/json, text/plain, */*",
+    })
+
+    login_url   = "https://kite.zerodha.com/api/login"
+    twofa_url   = "https://kite.zerodha.com/api/twofa"
+    connect_url = "https://kite.trade/connect/login"
+    token_url   = "https://api.kite.trade/session/token"
+
+    j1 = None
+    # ---- STEP 1: LOGIN (unless request_id already provided) ----
+    if not req.request_id:
+        try:
+            r1 = s.post(login_url, data={"user_id": req.account_username, "password": req.account_password}, timeout=15)
+        except requests.RequestException as e:
+            raise HTTPException(status_code=504, detail={"code": "login_timeout", "message": str(e)})
+
+        try:
+            j1 = r1.json()
+        except Exception:
+            j1 = None
+
+        # CAPTCHA?
+        if j1 and is_captcha_required(j1):
+            raise HTTPException(status_code=403, detail={
+                "code": "captcha_required", "step": "login",
+                "message": j1.get("message") or j1,
+                "twofa": parse_twofa_info(j1),
+                "upstream": j1
+            })
+
+        # Wrong password or other error
+        if not r1.ok or (j1 and j1.get("status") == "error"):
+            return raise_kite_error(r1, step="login")
+
+        # Expect success shape with request_id
+        if not (j1 and isinstance(j1, dict) and "data" in j1 and "request_id" in j1["data"]):
+            raise HTTPException(status_code=502, detail={"code":"login_shape_unexpected","step":"login","upstream": j1 or r1.text})
+
+        request_id = j1["data"]["request_id"]
+        twofa_info = parse_twofa_info(j1)
+    else:
+        request_id = req.request_id
+        # If we skipped login, assume 2FA is needed to proceed
+        twofa_info = {"enabled": True, "status": None, "type": None, "types": []}
+
+    # ---- EARLY RETURN: twofa_required (if no code/secret supplied or explicitly deferred) ----
+    want_defer = req.defer_twofa or not (req.account_two_fa and req.account_two_fa.strip())
+    if twofa_info.get("enabled") and want_defer:
+        return {
+            "status": "twofa_required",
+            "user_id": (j1 or {}).get("data", {}).get("user_id") if j1 else req.account_username,
+            "request_id": request_id,
+            "twofa": twofa_info,
+            "login": j1  # echo the upstream login success payload if available
+        }
+
+    # ---- STEP 2: TWOFA (only if enabled) ----
+    if twofa_info.get("enabled"):
+        # Decide TOTP vs raw 6-digit code
+        if req.account_two_fa and len(req.account_two_fa) > 6 and not req.defer_twofa:
+            try:
+                twofa_value = TOTP(req.account_two_fa).now().zfill(6)
+                twofa_type = "totp"
+            except Exception as e:
+                raise HTTPException(status_code=422, detail={"code": "invalid_totp_secret", "message": str(e)})
+        else:
+            twofa_value = (req.account_two_fa or "").strip()
+            twofa_type = "totp"  # change to "pin" if your setup uses PIN-based 2FA
+
+        if not twofa_value:
+            raise HTTPException(status_code=400, detail={"code":"twofa_missing","message":"Provide 6-digit 2FA code or TOTP secret, or set defer_twofa=true."})
+
+        # IMPORTANT: On invalid TOTP, server returns JSON error; on valid, it will move forward.
+        try:
+            r2 = s.post(
+                twofa_url,
+                data={
+                    "user_id": req.account_username,
+                    "request_id": request_id,
+                    "twofa_value": twofa_value,
+                    "twofa_type": twofa_type,
+                    "skip_session": "true",
+                },
+                timeout=15,
+                # allow_redirects=True is fine; invalid TOTP won't redirect anyway
+            )
+        except requests.RequestException as e:
+            raise HTTPException(status_code=504, detail={"code":"twofa_timeout","message":str(e)})
+
+        # Parse JSON if present (invalid TOTP case returns JSON like your example)
+        j2 = None
+        try:
+            j2 = r2.json()
+        except Exception:
+            j2 = None
+
+        # If invalid TOTP → push exact error to client with attempts_remaining
+        if j2 and j2.get("status") == "error":
+            msg = j2.get("message", "")
+            if j2.get("error_type") == "TwoFAException" or "invalid totp" in msg.lower():
+                attempts = (j2.get("data") or {}).get("attempts_remaining")
+                raise HTTPException(
+                    status_code=401,
+                    detail={
+                        "code": "invalid_twofa",
+                        "step": "twofa",
+                        "message": msg,
+                        "attempts_remaining": attempts,
+                        "upstream": j2,
+                    },
+                )
+            # Other 2FA errors
+            raise HTTPException(
+                status_code=r2.status_code or 401,
+                detail={"code": "twofa_error", "step": "twofa", "message": msg or r2.text, "upstream": j2 or r2.text},
+            )
+
+        # If success, proceed to request_token exchange
+
+    # ---- STEP 3: CONNECT → request_token ----
+    try:
+        r3 = s.get(f"{connect_url}?api_key={req.api_key}", timeout=15, allow_redirects=True)
+    except requests.RequestException as e:
+        raise HTTPException(status_code=504, detail={"code":"connect_timeout","message":str(e)})
+
+    def extract_request_token(resp: requests.Response) -> Optional[str]:
+        # final URL
+        if "request_token=" in resp.url:
+            return resp.url.split("request_token=")[1].split("&")[0]
+        # redirect history
+        for h in resp.history or []:
+            loc = h.headers.get("Location", "")
+            if "request_token=" in loc:
+                return loc.split("request_token=")[1].split("&")[0]
+            if "request_token=" in h.url:
+                return h.url.split("request_token=")[1].split("&")[0]
+        # body fallback
+        m = re.search(r"request_token=([a-zA-Z0-9_-]+)", resp.text or "")
+        return m.group(1) if m else None
+
+    request_token = extract_request_token(r3)
+    if not request_token:
+        snippet = (r3.text or "")[:400]
+        raise HTTPException(status_code=502, detail={
+            "code":"request_token_missing","step":"connect","message":"Could not extract request_token",
+            "url": r3.url, "snippet": snippet
+        })
+
+    # ---- STEP 4: TOKEN EXCHANGE ----
+    checksum = hashlib.sha256(f"{req.api_key}{request_token}{req.api_secret}".encode("utf-8")).hexdigest()
+    try:
+        r4 = s.post(
+            token_url,
+            data={"api_key": req.api_key, "request_token": request_token, "checksum": checksum},
+            timeout=15,
+        )
+    except requests.RequestException as e:
+        raise HTTPException(status_code=504, detail={"code":"token_timeout","message":str(e)})
+
+    try:
+        j4 = r4.json()
+    except json.JSONDecodeError:
+        return raise_kite_error(r4, step="token")
+    if j4.get("status") == "error" or not r4.ok:
+        return raise_kite_error(r4, step="token")
+
+    access_token = (j4.get("data") or {}).get("access_token")
+    if not access_token:
+        return raise_kite_error(r4, step="token")
+
+    # ---- SUCCESS ----
+
+    return {
+        "status": "ok",
+        "user_id": req.account_username,
+        "access_token": access_token
+    }
+
 
 
  # or use symphony.acagarwal.com:3000 if needed
