@@ -1,6 +1,8 @@
 import subprocess
 import sys
 from typing import Union
+from typing import Optional
+
 from typing import List, Dict, Any
 try:
     from StringIO import StringIO
